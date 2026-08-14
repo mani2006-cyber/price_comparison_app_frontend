@@ -11,6 +11,19 @@ export class ApiError extends Error {
     }
 }
 
+// Fired on every 401 this helper sees, from any page's api.js. Registered
+// once by AuthContext (the only thing that can actually act on it - clear
+// the dead session so ProtectedRoute redirects to /login). Without this, a
+// 401 was only ever visible to whichever component happened to catch it -
+// most of them (WishlistContext, AlertContext, NotificationContext) just
+// swallow fetch errors non-fatally and never told AuthContext the session
+// had died, so the app kept rendering the protected page - just silently
+// stuck on stale/empty data - instead of bouncing to a public view.
+let onUnauthorized = null;
+export function setUnauthorizedHandler(fn) {
+    onUnauthorized = fn;
+}
+
 export async function parseResponse(res, notFoundMessage) {
     let data = null;
     try {
@@ -24,6 +37,7 @@ export async function parseResponse(res, notFoundMessage) {
 
     if (!res.ok || dataSuccess === false) {
         if (res.status === 401) {
+            if (onUnauthorized) onUnauthorized();
             throw new ApiError(dataError || "Please log in to continue", 401);
         }
         if (res.status === 404) {

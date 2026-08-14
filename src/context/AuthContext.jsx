@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { API_BASE } from "../lib/apiBase";
 import { decodeJwtExpMs } from "../lib/jwt";
+import { setUnauthorizedHandler } from "../lib/http";
 
 // Refresh this many ms before the access token's real expiry - early enough
 // that an in-flight request started right before the deadline doesn't lose
@@ -28,6 +29,20 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [initializing, setInitializing] = useState(true);
+
+  // Any page's api.js call that gets a 401 reports it here (see
+  // lib/http.js) - this is the one place that can actually act on "the
+  // session is dead": clear it locally so isAuthenticated flips to false,
+  // ProtectedRoute redirects to /login, and every context's own
+  // `!isAuthenticated` effect resets its cached data. No server call
+  // needed - a 401 already means the server considers this token invalid.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null);
+      setAccessToken(null);
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
 
   // On first load, try to silently exchange the refreshToken cookie for a
   // fresh accessToken so a page reload doesn't drop the session.
