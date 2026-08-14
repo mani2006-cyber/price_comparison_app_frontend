@@ -1,0 +1,191 @@
+@import "tailwindcss";
+
+/*
+ * SearchHub design system — "Borealis": soft violet-to-cyan gradients, full
+ * pill shapes, colored glow shadows instead of grey ones. Chosen over a
+ * neubrutalist and a dark-glass alternative specifically because this app
+ * is a product-photo-heavy shopping grid: it needed to stay light/legible
+ * at scale while still reading as considerably more premium than the
+ * previous flat blue/slate pass.
+ */
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-violet-50: #f4f1ff;
+  --color-violet-100: #ebe5ff;
+  --color-violet-200: #d9cfff;
+  --color-violet-300: #bdaaff;
+  --color-violet-400: #9d7dff;
+  --color-violet-500: #7c5cfc;
+  --color-violet-600: #6a3fd8;
+  --color-violet-700: #5731b3;
+  --color-violet-800: #452791;
+  --color-violet-900: #2f1b66;
+
+  --color-cyan-glow-400: #4fe0f5;
+  --color-cyan-glow-500: #22d3ee;
+  --color-cyan-glow-600: #0e9fbd;
+}
+
+html {
+  font-family: var(--font-sans);
+  /* Reserves the scrollbar's width permanently instead of only when content
+     is tall enough to need it. Without this, going from a short page (e.g.
+     Compare by Link's empty state) to a tall one (full results) makes the
+     scrollbar appear and shove everything - nav included - left by its
+     width, which reads as the navbar visibly jumping/moving on submit. */
+  scrollbar-gutter: stable;
+  /* Safety net: caps the page at the device width no matter what overflows
+     inside it. Without this, a single element that's wider than the viewport
+     (e.g. a grid item that isn't told to stack on mobile) makes the WHOLE
+     page render at that wider size and only "zoom out" reveals it, instead
+     of just clipping the one offending element - exactly the "shows laptop
+     view until I zoom out manually" bug.
+     `clip`, not `hidden`: `overflow: hidden` on html/body turns it into a
+     scroll container, which silently breaks `position: sticky` for every
+     descendant (the nav, the sticky product image) - they stop pinning to
+     the viewport and just scroll away with the page instead. `clip` still
+     stops horizontal overflow but doesn't create that scroll container. */
+  overflow-x: clip;
+}
+
+body {
+  background: #fbfaff;
+  overflow-x: clip;
+}
+
+@layer components {
+  /* Primary call-to-action: violet->cyan gradient fill, glow shadow, full pill. */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: white;
+    border-radius: 999px;
+    background-image: linear-gradient(135deg, var(--color-violet-500) 0%, var(--color-cyan-glow-500) 100%);
+    box-shadow: 0 10px 24px -8px rgba(124, 92, 252, 0.55);
+    transition: box-shadow 200ms ease, transform 150ms ease, filter 150ms ease;
+    cursor: pointer;
+  }
+  .btn-primary:hover {
+    filter: brightness(1.05) saturate(1.05);
+    box-shadow: 0 14px 30px -8px rgba(124, 92, 252, 0.65);
+  }
+  .btn-primary:active {
+    transform: scale(0.97);
+  }
+  .btn-primary:disabled {
+    filter: grayscale(0.3);
+    opacity: 0.55;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    color: var(--color-violet-700);
+    background: white;
+    border-radius: 999px;
+    border: 1.5px solid var(--color-violet-200);
+    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+    cursor: pointer;
+  }
+  .btn-secondary:hover {
+    background: var(--color-violet-50);
+    border-color: var(--color-violet-300);
+  }
+  .btn-secondary:active {
+    transform: scale(0.97);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    border-radius: 999px;
+    color: var(--color-ink-500);
+    transition: background-color 150ms ease, color 150ms ease;
+    cursor: pointer;
+  }
+  .btn-ghost:hover {
+    background: var(--color-violet-50);
+    color: var(--color-violet-700);
+  }
+
+  /* Standard elevated panel: white card, tinted violet shadow. Radius is set by
+     whatever Tailwind rounded-* utility the call site pairs this with (rounded-3xl
+     sitewide now) - kept out of this class so utilities (a higher cascade layer)
+     don't silently fight a radius declared here. */
+  .card-surface {
+    background: white;
+    border: 1px solid var(--color-violet-100);
+    box-shadow: 0 2px 4px rgba(124, 92, 252, 0.04), 0 16px 32px -16px rgba(124, 92, 252, 0.22);
+  }
+
+  /* Gradient text, used sparingly - hero price/headline moments only, never in dense grids. */
+  .text-gradient {
+    background-image: linear-gradient(135deg, var(--color-violet-600) 0%, var(--color-cyan-glow-600) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Soft aurora wash behind nav/hero areas - replaces the old flat slate background. */
+  .aurora-bg {
+    background-color: #fbfaff;
+    background-image:
+      radial-gradient(480px 260px at 12% 0%, rgba(124, 92, 252, 0.14), transparent 70%),
+      radial-gradient(420px 260px at 100% 0%, rgba(34, 211, 238, 0.14), transparent 70%);
+    background-repeat: no-repeat;
+  }
+}
+
+@layer utilities {
+  @keyframes fade-slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-in {
+    animation: fade-slide-up 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Lets a row scroll horizontally as a fallback (see App.jsx's nav) without
+     an ugly scrollbar sitting under it - the row is still fully scrollable
+     by touch/trackpad, just without the visual chrome. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-in {
+      animation: none;
+    }
+  }
+}
