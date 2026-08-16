@@ -8,8 +8,6 @@ import WishlistPage from "./pages/wishlist/WishlistPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotificationsPage from "./pages/notifications/NotificationsPage";
 import AlertsPage from "./pages/alerts/AlertsPage";
-import CategoriesPage from "./pages/categories/CategoriesPage";
-import CategoryProductsPage from "./pages/categories/CategoryProductsPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { NotificationProvider, useNotifications } from "./context/NotificationContext";
@@ -79,9 +77,6 @@ function Nav() {
         <NavLink to="/search" className={desktopOnlyLinkClass} style={linkStyle}>
           Search
         </NavLink>
-        <NavLink to="/categories" className={desktopOnlyLinkClass} style={linkStyle}>
-          Categories
-        </NavLink>
         <NavLink to="/compare-url" className={linkClass} style={linkStyle}>
           Compare by Link
         </NavLink>
@@ -137,8 +132,6 @@ function App() {
               <div className="pb-20 md:pb-0">
                 <Routes>
                   <Route path="/search" element={<SearchPage />} />
-                  <Route path="/categories" element={<CategoriesPage />} />
-                  <Route path="/categories/:category" element={<CategoryProductsPage />} />
                   <Route path="/compare-url" element={<ComparePage />} />
                   <Route path="/products/:id" element={<ProductPage />} />
                   <Route path="/signup" element={<SignupPage />} />
