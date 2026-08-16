@@ -6,8 +6,9 @@ import SkeletonCard from "../../components/ui/SkeletonCard";
 import Pagination from "./components/Pagination";
 import StateMessage from "../../components/ui/StateMessage";
 import { InboxIcon, AlertIcon, ChevronLeftIcon } from "../../components/icons";
+import { config } from "../../lib/config";
 
-const PAGE_SIZE = 20; // backend caps limit at 50
+const PAGE_SIZE = config.categoryPageSize; // clamped to the backend's max of 50 in config.js
 
 // Value "" means "send no sortBy at all", which the backend treats as its
 // default (most recently checked first). The other three are exactly the

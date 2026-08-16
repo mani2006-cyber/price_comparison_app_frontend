@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Local env overrides - .env.example is the committed, documented template
+.env
+.env.*
+!.env.example
+
 # Pasted screenshots (e.g. from chat) saved to the project root during dev
 image.png
 

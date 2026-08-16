@@ -10,8 +10,9 @@ import SearchSuggestionsDropdown from "./components/SearchSuggestionsDropdown";
 import Button from "../../components/ui/Button";
 import { SearchIcon, InboxIcon, ConfusedIcon, AlertIcon } from "../../components/icons";
 import { useAuth } from "../../context/AuthContext";
+import { config } from "../../lib/config";
 
-const DEFAULT_QUERY = "laptop";
+const DEFAULT_QUERY = config.defaultSearchQuery;
 
 function SearchPage() {
   const { isAuthenticated, accessToken } = useAuth();
