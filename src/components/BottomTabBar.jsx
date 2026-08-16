@@ -1,10 +1,16 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAlerts } from "../context/AlertContext";
-import { HomeIcon, SearchIcon, HeartIcon, BellIcon } from "./icons";
+import { GridIcon, SearchIcon, HeartIcon, BellIcon } from "./icons";
 
+// `end: false` on Browse so the tab stays highlighted while you're inside a
+// category (/categories/Headphones), not just on the index. Search keeps the
+// default exact match.
+// Browse replaced a second "Home" tab that pointed at /search - the same
+// destination as the Search tab beside it, which gave the bar two tabs that
+// did the same thing and no entry point to category browsing at all.
 const TABS = [
-  { to: "/search", label: "Home", Icon: HomeIcon },
+  { to: "/categories", label: "Browse", Icon: GridIcon, end: false },
   { to: "/search", label: "Search", Icon: SearchIcon },
   { to: "/wishlist", label: "Wishlist", Icon: HeartIcon, authOnly: true },
   { to: "/alerts", label: "Alerts", Icon: BellIcon, authOnly: true },
@@ -31,7 +37,7 @@ function BottomTabBar() {
       aria-label="Primary"
     >
       <div className="grid grid-cols-4">
-        {TABS.map(({ to, label, Icon, authOnly }) => {
+        {TABS.map(({ to, label, Icon, authOnly, end = true }) => {
           if (authOnly && !isAuthenticated) {
             // Logged out: send Wishlist/Alerts taps to login instead of hiding
             // the tab entirely - keeps the bar's 4-item layout stable rather
@@ -53,7 +59,7 @@ function BottomTabBar() {
             <NavLink
               key={label}
               to={to}
-              end
+              end={end}
               className={({ isActive }) =>
                 `relative flex flex-col items-center justify-center gap-1 py-2.5 transition-colors ${
                   isActive ? "text-violet-600" : "text-slate-400 hover:text-slate-600"

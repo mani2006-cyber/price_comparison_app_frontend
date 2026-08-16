@@ -1,11 +1,17 @@
 import { Link } from "react-router-dom";
-import Stars from "../../../components/ui/Stars";
-import MarketplaceBadge from "../../../components/ui/MarketplaceBadge";
-import WishlistButton from "../../../components/ui/WishlistButton";
-import { BoxIcon } from "../../../components/icons";
-import { formatPrice } from "../../../lib/formatPrice";
+import Stars from "./Stars";
+import MarketplaceBadge from "./MarketplaceBadge";
+import WishlistButton from "./WishlistButton";
+import { BoxIcon } from "../icons";
+import { formatPrice } from "../../lib/formatPrice";
+import { categoryPath } from "../../lib/categoryPath";
 
-function ProductCard({ product, style }) {
+/**
+ * `hideCategoryLink` is for the category browse page itself, where every card
+ * already shares the same category - linking each one back to the page you're
+ * standing on is just noise.
+ */
+function ProductCard({ product, style, hideCategoryLink = false }) {
   const {
     _id,
     marketplace,
@@ -71,9 +77,18 @@ function ProductCard({ product, style }) {
         )}
       </div>
 
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-600 truncate mb-1">
-        {category || brand || "Product"}
-      </p>
+      {category && !hideCategoryLink ? (
+        <Link
+          to={categoryPath(category)}
+          className="text-[11px] font-semibold uppercase tracking-wide text-violet-600 truncate mb-1 block hover:underline"
+        >
+          {category}
+        </Link>
+      ) : (
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-600 truncate mb-1">
+          {category || brand || "Product"}
+        </p>
+      )}
 
       <Link to={comparePath || "#"}>
         <h3 className="font-semibold text-slate-900 text-sm leading-snug mb-1.5 line-clamp-2 min-h-[2.5rem] hover:text-violet-600 transition-colors">

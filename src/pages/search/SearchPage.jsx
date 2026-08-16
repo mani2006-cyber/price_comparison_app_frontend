@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { searchProducts, getSearchHistory, deleteSearchHistoryItem } from "./api";
-import ProductCard from "./components/ProductCard";
-import SkeletonCard from "./components/SkeletonCard";
+import ProductCard from "../../components/ui/ProductCard";
+import SkeletonCard from "../../components/ui/SkeletonCard";
 import ResultsToolbar from "./components/ResultsToolbar";
 import StateMessage from "../../components/ui/StateMessage";
 import FailureBanner from "../../components/ui/FailureBanner";
