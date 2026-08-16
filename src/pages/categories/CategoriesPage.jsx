@@ -28,12 +28,18 @@ function CategoriesPage() {
     };
   }, []);
 
+  const totalProducts = categories.reduce((sum, c) => sum + (c.count || 0), 0);
+
   return (
     <div className="min-h-screen aurora-bg">
       <main className="max-w-5xl mx-auto px-6 py-8">
         <h1 className="text-xl font-extrabold text-slate-900 mb-1">Browse categories</h1>
         <p className="text-sm text-slate-400 mb-6">
-          Everything we've indexed so far, grouped by category.
+          {loading
+            ? "Loading categories…"
+            : categories.length > 0
+            ? `${categories.length} categories · ${totalProducts.toLocaleString("en-IN")} products`
+            : "Everything we've indexed so far, grouped by category."}
         </p>
 
         {loading && <CategoriesSkeleton />}
@@ -59,6 +65,7 @@ function CategoriesPage() {
               <CategoryCard
                 key={c.category}
                 category={c.category}
+                count={c.count}
                 style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}
               />
             ))}

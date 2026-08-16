@@ -84,14 +84,6 @@ function CategoryProductsPage() {
   // segment the user happened to type.
   const displayName = result?.category || category;
 
-  const subtitle = loading
-    ? "Loading…"
-    : total === 0
-    ? "No products in this category"
-    : totalPages > 1
-    ? `Page ${page} of ${totalPages}`
-    : "";
-
   return (
     <div className="min-h-screen aurora-bg">
       <main className="max-w-7xl mx-auto px-6 py-8">
@@ -106,12 +98,15 @@ function CategoryProductsPage() {
         <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
           <div className="min-w-0">
             <h1 className="text-xl font-extrabold text-slate-900 mb-1 truncate">{displayName}</h1>
-            {/* Deliberately page position only, not a product total - the
-                catalog holds just what earlier searches persisted, so a total
-                here would overstate what the category actually contains.
-                "Page 2 of 4" is navigation the pager needs; "70 products" was
-                a number the user can't act on. */}
-            {subtitle && <p className="text-sm text-slate-400 tabular-nums">{subtitle}</p>}
+            <p className="text-sm text-slate-400 tabular-nums">
+              {loading
+                ? "Loading…"
+                : total > 0
+                ? `${total.toLocaleString("en-IN")} ${total === 1 ? "product" : "products"}${
+                    totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""
+                  }`
+                : "No products in this category"}
+            </p>
           </div>
 
           <select
