@@ -33,3 +33,15 @@ export async function cancelAlert(accessToken, id) {
     const data = await parseResponse(res, "Active alert not found");
     return data.alert;
 }
+
+// Hard delete, distinct from cancel above: cancel is a soft active ->
+// cancelled transition (and 404s on anything not currently active), while
+// this removes the row outright and works whatever the status - it's how a
+// cancelled or already-triggered alert gets off the user's list.
+export async function deleteAlert(accessToken, id) {
+    const res = await fetch(`${API_BASE}/api/alerts/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return parseResponse(res, "Alert not found");
+}

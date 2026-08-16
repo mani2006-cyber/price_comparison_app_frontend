@@ -6,9 +6,10 @@ import StateMessage from "../../components/ui/StateMessage";
 import { BellIcon, AlertIcon } from "../../components/icons";
 
 function AlertsPage() {
-  const { alerts, loaded, refresh, removeAlert } = useAlerts();
+  const { alerts, loaded, refresh, removeAlert, discardAlert } = useAlerts();
   const [error, setError] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     refresh();
@@ -24,6 +25,18 @@ function AlertsPage() {
       setError(err.message || "Couldn't cancel that alert. Please try again.");
     } finally {
       setCancellingId(null);
+    }
+  }
+
+  async function handleDelete(alertId) {
+    setDeletingId(alertId);
+    setError(null);
+    try {
+      await discardAlert(alertId);
+    } catch (err) {
+      setError(err.message || "Couldn't remove that alert. Please try again.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -57,7 +70,14 @@ function AlertsPage() {
         {loaded && alerts.length > 0 && (
           <div className="space-y-3 animate-in">
             {alerts.map((alert) => (
-              <AlertItem key={alert._id} alert={alert} onCancel={handleCancel} cancelling={cancellingId === alert._id} />
+              <AlertItem
+                key={alert._id}
+                alert={alert}
+                onCancel={handleCancel}
+                cancelling={cancellingId === alert._id}
+                onDelete={handleDelete}
+                deleting={deletingId === alert._id}
+              />
             ))}
           </div>
         )}

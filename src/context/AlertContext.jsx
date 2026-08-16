@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
-import { getAlerts, createAlert, cancelAlert } from "../pages/alerts/api";
+import { getAlerts, createAlert, cancelAlert, deleteAlert } from "../pages/alerts/api";
 
 const AlertContext = createContext(null);
 
@@ -61,11 +61,25 @@ export function AlertProvider({ children }) {
     [accessToken, refresh]
   );
 
+  // Soft cancel: the alert stays in the list, flipped to "cancelled", so the
+  // user can still see they'd been watching that price.
   const removeAlert = useCallback(
     async (alertId) => {
       const updated = await cancelAlert(accessToken, alertId);
       setAlerts((prev) => prev.map((a) => (a._id === alertId ? { ...a, status: updated.status } : a)));
       return updated;
+    },
+    [accessToken]
+  );
+
+  // Hard delete: drops the alert from the list entirely. Cancelled and
+  // triggered alerts are otherwise permanent - cancel can't apply to them
+  // (it only transitions active ones), so without this they accumulate on
+  // the alerts page with no way to clear them.
+  const discardAlert = useCallback(
+    async (alertId) => {
+      await deleteAlert(accessToken, alertId);
+      setAlerts((prev) => prev.filter((a) => a._id !== alertId));
     },
     [accessToken]
   );
@@ -76,6 +90,7 @@ export function AlertProvider({ children }) {
     getActiveAlert,
     addAlert,
     removeAlert,
+    discardAlert,
     refresh,
   };
 
