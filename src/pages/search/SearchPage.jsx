@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { searchProducts, getSearchHistory, deleteSearchHistoryItem } from "./api";
 import ProductCard from "../../components/ui/ProductCard";
 import SkeletonCard from "../../components/ui/SkeletonCard";
@@ -14,8 +15,15 @@ const DEFAULT_QUERY = "laptop";
 
 function SearchPage() {
   const { isAuthenticated, accessToken } = useAuth();
-  const [query, setQuery] = useState(DEFAULT_QUERY);
-  const [inputValue, setInputValue] = useState(DEFAULT_QUERY);
+  // ?q= drives the page, so a search is linkable and shareable - it's how the
+  // category tiles on /categories hand a term over, and it means the browser
+  // back button steps back through searches instead of leaving the page.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlQuery = (searchParams.get("q") || "").trim();
+  const activeQuery = urlQuery || DEFAULT_QUERY;
+
+  const [query, setQuery] = useState(activeQuery);
+  const [inputValue, setInputValue] = useState(activeQuery);
   const [products, setProducts] = useState([]);
   const [resultCount, setResultCount] = useState(0);
   const [marketplaceFailures, setMarketplaceFailures] = useState([]);
@@ -40,10 +48,16 @@ function SearchPage() {
       });
   }, [isAuthenticated, accessToken]);
 
+  // Re-runs whenever ?q= changes, which covers both the first load and
+  // arriving from a category tile while already sitting on this page (where
+  // a mount-only effect would never fire again).
   useEffect(() => {
-    runSearch(DEFAULT_QUERY);
+    setQuery(activeQuery);
+    setInputValue(activeQuery);
+    setMarketplaceFilter("all");
+    runSearch(activeQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [activeQuery]);
 
   useEffect(() => {
     loadHistory();
@@ -82,22 +96,20 @@ function SearchPage() {
     }
   }
 
+  // Both of these go through the URL rather than calling runSearch directly -
+  // the ?q= effect above is what actually performs the search, so there's one
+  // path in and no way for the address bar to disagree with what's on screen.
   function handleHistorySelect(term) {
-    setInputValue(term);
-    setQuery(term);
-    setMarketplaceFilter("all");
     setShowSuggestions(false);
-    runSearch(term);
+    setSearchParams({ q: term });
   }
 
   function handleSubmit(e) {
     e.preventDefault();
     const trimmed = inputValue.trim();
     if (!trimmed) return;
-    setQuery(trimmed);
-    setMarketplaceFilter("all");
     setShowSuggestions(false);
-    runSearch(trimmed);
+    setSearchParams({ q: trimmed });
   }
 
   const marketplaces = useMemo(() => {

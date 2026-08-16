@@ -1,23 +1,21 @@
 import { Link } from "react-router-dom";
-import { ChevronRightIcon } from "../../../components/icons";
-import { categoryPath } from "../../../lib/categoryPath";
 
-// The API also returns a per-category product count, but it isn't shown:
-// the catalog only holds what previous searches happened to persist, so a
-// count here reads as "this category has N products in it" when it really
-// means "N have been indexed so far" - misleading, and it barely moves
-// between visits. The category name alone is the honest label.
-function CategoryCard({ category, style }) {
+// Links to /search rather than /categories/:name - see categoryCatalog.jsx
+// for why these tiles run a live search instead of filtering the stored
+// catalog by category name.
+function CategoryCard({ label, query, Icon, tint, style }) {
   return (
     <Link
-      to={categoryPath(category)}
+      to={`/search?q=${encodeURIComponent(query)}`}
       style={style}
-      className="animate-in card-surface rounded-3xl p-5 flex items-center gap-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group"
+      className="animate-in card-surface rounded-3xl p-5 flex flex-col items-start gap-3 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group"
     >
-      <h2 className="flex-1 min-w-0 font-bold text-slate-900 text-sm leading-snug truncate group-hover:text-violet-600 transition-colors">
-        {category}
+      <span className={`w-11 h-11 rounded-2xl grid place-items-center shrink-0 ${tint}`}>
+        <Icon className="w-[22px] h-[22px]" />
+      </span>
+      <h2 className="font-bold text-slate-900 text-sm leading-snug group-hover:text-violet-600 transition-colors">
+        {label}
       </h2>
-      <ChevronRightIcon className="w-4 h-4 text-slate-300 shrink-0 group-hover:text-violet-500 transition-colors" />
     </Link>
   );
 }
