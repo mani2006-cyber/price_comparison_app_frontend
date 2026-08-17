@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from "react-router-dom";
 import { getCategoryProducts } from "./api";
 import ProductCard from "../../components/ui/ProductCard";
 import SkeletonCard from "../../components/ui/SkeletonCard";
-import Pagination from "./components/Pagination";
+import Pagination from "../../components/ui/Pagination";
 import StateMessage from "../../components/ui/StateMessage";
 import { InboxIcon, AlertIcon, ChevronLeftIcon } from "../../components/icons";
 import { config } from "../../lib/config";

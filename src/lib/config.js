@@ -33,8 +33,11 @@ export const config = {
     // The search run when /search is opened with no ?q= of its own.
     defaultSearchQuery: (import.meta.env.VITE_DEFAULT_SEARCH_QUERY || "laptop").trim(),
 
-    // Products per page on a category page. The backend's Zod schema rejects
-    // anything above 50, so this is clamped rather than passed through blindly
-    // - an over-large value would otherwise turn every request into a 400.
+    // Products per page. Both endpoints cap `limit` in their Zod schema
+    // (SEARCH_MAX_LIMIT / CATEGORY_MAX_LIMIT, both 50 by default), so these
+    // are clamped rather than passed through blindly - an over-large value
+    // would otherwise turn every request into a 400 instead of just being
+    // rounded down.
+    searchPageSize: Math.min(num(import.meta.env.VITE_SEARCH_PAGE_SIZE, 20), 50),
     categoryPageSize: Math.min(num(import.meta.env.VITE_CATEGORY_PAGE_SIZE, 20), 50),
 };

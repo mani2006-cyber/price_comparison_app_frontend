@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { searchProducts, getSearchHistory, deleteSearchHistoryItem } from "./api";
 import ProductCard from "../../components/ui/ProductCard";
 import SkeletonCard from "../../components/ui/SkeletonCard";
+import Pagination from "../../components/ui/Pagination";
 import ResultsToolbar from "./components/ResultsToolbar";
 import StateMessage from "../../components/ui/StateMessage";
 import FailureBanner from "../../components/ui/FailureBanner";
@@ -13,6 +14,7 @@ import { useAuth } from "../../context/AuthContext";
 import { config } from "../../lib/config";
 
 const DEFAULT_QUERY = config.defaultSearchQuery;
+const PAGE_SIZE = config.searchPageSize; // clamped to the backend's max in config.js
 
 function SearchPage() {
   const { isAuthenticated, accessToken } = useAuth();
@@ -22,17 +24,21 @@ function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlQuery = (searchParams.get("q") || "").trim();
   const activeQuery = urlQuery || DEFAULT_QUERY;
+  // page and sortBy live in the URL for the same reason q does - the server
+  // owns both, so the address bar can't drift out of sync with the results,
+  // and page 3 of a sorted search is a link someone can send.
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+  const sortBy = searchParams.get("sortBy") || "";
 
   const [query, setQuery] = useState(activeQuery);
   const [inputValue, setInputValue] = useState(activeQuery);
   const [products, setProducts] = useState([]);
   const [resultCount, setResultCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [marketplaceFailures, setMarketplaceFailures] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const [marketplaceFilter, setMarketplaceFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("relevance");
   const [history, setHistory] = useState([]);
   const [deletingHistoryId, setDeletingHistoryId] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -49,36 +55,43 @@ function SearchPage() {
       });
   }, [isAuthenticated, accessToken]);
 
-  // Re-runs whenever ?q= changes, which covers both the first load and
-  // arriving from a category tile while already sitting on this page (where
-  // a mount-only effect would never fire again).
+  // Re-runs whenever the query, page or sort changes - which covers the first
+  // load, arriving from a category tile while already sitting on this page
+  // (where a mount-only effect would never fire again), and paging/sorting.
   useEffect(() => {
     setQuery(activeQuery);
     setInputValue(activeQuery);
-    setMarketplaceFilter("all");
-    runSearch(activeQuery);
+    runSearch(activeQuery, { page, sortBy });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeQuery]);
+  }, [activeQuery, page, sortBy]);
 
   useEffect(() => {
     loadHistory();
   }, [loadHistory]);
 
-  async function runSearch(term) {
+  async function runSearch(term, { page: pageArg, sortBy: sortArg } = {}) {
     const trimmed = term.trim();
     if (!trimmed) return;
     setLoading(true);
     setError(null);
     setHasSearched(true);
     try {
-      const data = await searchProducts(trimmed, isAuthenticated ? accessToken : undefined);
+      const data = await searchProducts(trimmed, isAuthenticated ? accessToken : undefined, {
+        sortBy: sortArg || undefined,
+        page: pageArg,
+        limit: PAGE_SIZE,
+      });
       setProducts(data.products ?? []);
+      // resultCount is the total across every page, not this page's length -
+      // so it stays correct as the user pages through.
       setResultCount(data.resultCount ?? (data.products ?? []).length);
+      setTotalPages(data.totalPages ?? 0);
       setMarketplaceFailures(data.marketplaceFailures ?? []);
       loadHistory();
     } catch (err) {
       setError(err.message);
       setProducts([]);
+      setTotalPages(0);
       setMarketplaceFailures([]);
     } finally {
       setLoading(false);
@@ -100,6 +113,8 @@ function SearchPage() {
   // Both of these go through the URL rather than calling runSearch directly -
   // the ?q= effect above is what actually performs the search, so there's one
   // path in and no way for the address bar to disagree with what's on screen.
+  // A new search always starts at page 1 - keeping the old page would land
+  // the user mid-way through (or past the end of) a different result set.
   function handleHistorySelect(term) {
     setShowSuggestions(false);
     setSearchParams({ q: term });
@@ -113,25 +128,29 @@ function SearchPage() {
     setSearchParams({ q: trimmed });
   }
 
-  const marketplaces = useMemo(() => {
-    const set = new Set(products.map((p) => p.marketplace).filter(Boolean));
-    return ["all", ...Array.from(set)];
-  }, [products]);
+  // Sorting re-orders the whole result set server-side, so page 4 of the old
+  // order is meaningless under the new one - back to page 1.
+  function handleSortChange(value) {
+    const params = new URLSearchParams(searchParams);
+    params.set("q", activeQuery);
+    if (value) params.set("sortBy", value);
+    else params.delete("sortBy");
+    params.delete("page");
+    setSearchParams(params);
+  }
 
-  const visibleProducts = useMemo(() => {
-    let list = products;
-    if (marketplaceFilter !== "all") {
-      list = list.filter((p) => p.marketplace === marketplaceFilter);
-    }
-    const sorted = [...list];
-    if (sortBy === "price-asc") sorted.sort((a, b) => (a.currentPrice ?? Infinity) - (b.currentPrice ?? Infinity));
-    if (sortBy === "price-desc") sorted.sort((a, b) => (b.currentPrice ?? -Infinity) - (a.currentPrice ?? -Infinity));
-    if (sortBy === "rating") sorted.sort((a, b) => (b.rating?.average ?? 0) - (a.rating?.average ?? 0));
-    if (sortBy === "discount") sorted.sort((a, b) => (b.discountPercentage ?? 0) - (a.discountPercentage ?? 0));
-    return sorted;
-  }, [products, marketplaceFilter, sortBy]);
+  function handlePageChange(nextPage) {
+    const params = new URLSearchParams(searchParams);
+    params.set("q", activeQuery);
+    if (nextPage > 1) params.set("page", String(nextPage));
+    else params.delete("page");
+    setSearchParams(params);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
-  const hasResults = visibleProducts.length > 0;
+  // Products are already filtered, sorted and paginated by the server - the
+  // page renders exactly what it was given.
+  const hasResults = products.length > 0;
 
   return (
     <div className="min-h-screen aurora-bg">
@@ -169,15 +188,15 @@ function SearchPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {hasSearched && !loading && !error && products.length > 0 && (
+        {hasSearched && !error && (resultCount > 0 || loading) && (
           <ResultsToolbar
             resultCount={resultCount}
             query={query}
-            marketplaces={marketplaces}
-            marketplaceFilter={marketplaceFilter}
-            onMarketplaceChange={setMarketplaceFilter}
+            page={page}
+            totalPages={totalPages}
             sortBy={sortBy}
-            onSortChange={setSortBy}
+            onSortChange={handleSortChange}
+            disabled={loading}
           />
         )}
 
@@ -195,11 +214,15 @@ function SearchPage() {
         )}
 
         {hasSearched && !loading && !error && products.length === 0 && (
-          <StateMessage icon={InboxIcon} title="No products found" subtitle="Try a different keyword or check your spelling." />
-        )}
-
-        {hasSearched && !loading && !error && products.length > 0 && !hasResults && (
-          <StateMessage icon={ConfusedIcon} title="Nothing matches this filter" subtitle="Try selecting a different store." />
+          <StateMessage
+            icon={page > 1 ? ConfusedIcon : InboxIcon}
+            title={page > 1 ? "Nothing on this page" : "No products found"}
+            subtitle={
+              page > 1
+                ? "That page is past the end of these results — try going back a page."
+                : "Try a different keyword or check your spelling."
+            }
+          />
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -208,7 +231,7 @@ function SearchPage() {
           {!loading &&
             !error &&
             hasResults &&
-            visibleProducts.map((product, i) => (
+            products.map((product, i) => (
               <ProductCard
                 key={`${product.marketplace}-${product.externalId}`}
                 product={product}
@@ -216,6 +239,10 @@ function SearchPage() {
               />
             ))}
         </div>
+
+        {!error && (
+          <Pagination page={page} totalPages={totalPages} onChange={handlePageChange} disabled={loading} />
+        )}
       </main>
 
       <footer className="border-t border-slate-200 bg-white py-6 mt-10">

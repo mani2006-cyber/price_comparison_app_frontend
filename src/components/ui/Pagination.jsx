@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ChevronRightIcon } from "../../../components/icons";
+import { ChevronLeftIcon, ChevronRightIcon } from "../icons";
 
 // Windowed page numbers: with 17 pages we don't want 17 buttons on a phone.
 // Always shows first/last plus a small window around the current page, with
