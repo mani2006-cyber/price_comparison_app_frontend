@@ -5,7 +5,11 @@ import { formatPrice } from "../../../lib/formatPrice";
 import { decodeHtml } from "../../../lib/decodeHtml";
 import { BoxIcon } from "../../../components/icons";
 
-function MatchCard({ product, originalPrice }) {
+// originalPrice is optional: pass it for a cross-marketplace match, where a
+// "X% cheaper than original" delta is a real comparison. Omit it for similar
+// products, which aren't claimed to be the same item - see
+// SimilarProductsPanel for why that distinction matters.
+function MatchCard({ product, originalPrice, style }) {
   const { marketplace, title, brand, images, currentPrice, currency, rating, inStock, availability, rawUrl, similarityScore } =
     product;
 
@@ -18,7 +22,10 @@ function MatchCard({ product, originalPrice }) {
   }
 
   return (
-    <div className="animate-in card-surface rounded-3xl p-4 flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
+    <div
+      style={style}
+      className="animate-in card-surface rounded-3xl p-4 flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-200"
+    >
       <a
         href={rawUrl}
         target="_blank"

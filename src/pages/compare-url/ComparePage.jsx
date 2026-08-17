@@ -7,6 +7,7 @@ import ProductHeroPanel from "./components/ProductHeroPanel";
 import OffersPanel from "./components/OffersPanel";
 import AboutProduct from "./components/AboutProduct";
 import DetailsTable from "./components/DetailsTable";
+import SimilarProductsPanel from "./components/SimilarProductsPanel";
 import SkeletonCompare from "./components/SkeletonCompare";
 import StateMessage from "../../components/ui/StateMessage";
 import FailureBanner from "../../components/ui/FailureBanner";
@@ -15,8 +16,13 @@ import { effectiveDiscount } from "../../lib/discount";
 import { LinkIcon, AlertIcon, ConfusedIcon } from "../../components/icons";
 
 function ComparePage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const urlParam = searchParams.get("url") || "";
+  // ?page= paginates result.similarProducts only. Re-requesting is cheap even
+  // though it's a POST: the server caches the expensive part (live search,
+  // matching, AI summary) per URL and slices the page fresh on top, so paging
+  // doesn't re-scrape anything.
+  const similarPage = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
 
   const [inputValue, setInputValue] = useState(urlParam);
   const [result, setResult] = useState(null);
@@ -24,7 +30,7 @@ function ComparePage() {
   const [error, setError] = useState(null);
   const [hasSearched, setHasSearched] = useState(Boolean(urlParam));
 
-  const runCompare = useCallback(async (url) => {
+  const runCompare = useCallback(async (url, page) => {
     const trimmed = url.trim();
     if (!trimmed) return;
 
@@ -32,7 +38,7 @@ function ComparePage() {
     setError(null);
     setHasSearched(true);
     try {
-      const data = await compareUrl(trimmed);
+      const data = await compareUrl(trimmed, { page });
       setResult(data);
     } catch (err) {
       setError(err.message);
@@ -42,18 +48,34 @@ function ComparePage() {
     }
   }, []);
 
-  // Auto-run when arriving with ?url=... (e.g. clicked from a product card)
+  // Auto-run when arriving with ?url=... (e.g. clicked from a product card),
+  // and re-run when the similar-products page changes.
   useEffect(() => {
     if (urlParam) {
       setInputValue(urlParam);
-      runCompare(urlParam);
+      runCompare(urlParam, similarPage);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlParam]);
+  }, [urlParam, similarPage]);
 
+  // A freshly submitted URL always starts at page 1 - carrying the previous
+  // product's page number over would land on a page of a different pool.
   function handleSubmit(e) {
     e.preventDefault();
-    runCompare(inputValue);
+    const trimmed = inputValue.trim();
+    if (!trimmed) return;
+    setSearchParams({ url: trimmed });
+    // Submitting the SAME url leaves the params unchanged, so the effect
+    // above won't re-fire - run it directly for that case.
+    if (trimmed === urlParam && similarPage === 1) runCompare(trimmed, 1);
+  }
+
+  function handleSimilarPageChange(nextPage) {
+    const params = new URLSearchParams(searchParams);
+    params.set("url", urlParam || inputValue.trim());
+    if (nextPage > 1) params.set("page", String(nextPage));
+    else params.delete("page");
+    setSearchParams(params);
   }
 
   const results = (result && result.results) || [];
@@ -126,6 +148,17 @@ function ComparePage() {
                 <DetailsTable original={original} />
               </div>
             </div>
+
+            {/* Full width, below the comparison - these are browsing
+                suggestions rather than part of the price comparison. */}
+            <SimilarProductsPanel
+              products={result.similarProducts}
+              page={result.similarProductsPage}
+              totalPages={result.similarProductsTotalPages}
+              total={result.similarProductsTotal}
+              onPageChange={handleSimilarPageChange}
+              loading={loading}
+            />
           </div>
         )}
       </main>
