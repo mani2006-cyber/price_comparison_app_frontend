@@ -295,9 +295,11 @@ could sit on any other page, so it says *"lowest of the 20 shown"*.
 **Newly added catalog products don't appear on their category page for up to
 3 days.** This is a backend cache bug, not a frontend one, but it's the most
 visible thing an admin will hit. Writing an `AdminProduct` invalidates the
-`categories:list` cache — so the category's *count* updates immediately — but
-nothing invalidates `category-products:*`, so the category's *product list*
-keeps serving the pre-write entry until its TTL expires.
+`categories:list` cache — so a brand-new *category* appears on the browse grid
+right away — but nothing invalidates `category-products:*`, so that category's
+*product list* keeps serving the pre-write entry until its TTL expires. Adding
+a product to a category that already exists is therefore invisible to shoppers
+for up to three days.
 
 Reproduced directly: after adding a 7th Electronics product, `GET
 /api/categories` reported `count: 7` while `GET /api/categories/Electronics &

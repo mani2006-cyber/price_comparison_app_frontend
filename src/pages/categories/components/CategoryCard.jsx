@@ -9,7 +9,7 @@ import { categoryStyle } from "../categoryCatalog";
  * now holds a real, admin-curated set of products, so the honest destination
  * is that set — not a marketplace search for a word resembling the label.
  */
-function CategoryCard({ category, count, style }) {
+function CategoryCard({ category, style }) {
   const { Icon, tint } = categoryStyle(category);
 
   return (
@@ -21,17 +21,12 @@ function CategoryCard({ category, count, style }) {
       <span className={`w-11 h-11 rounded-2xl grid place-items-center shrink-0 ${tint}`}>
         <Icon className="w-[22px] h-[22px]" />
       </span>
-      <div className="min-w-0">
-        <h2 className="font-bold text-slate-900 text-sm leading-snug group-hover:text-violet-600 transition-colors">
-          {category}
-        </h2>
-        {/* A real count now, not an artefact: it's exactly how many published
-            entries an admin put in this category, so it means something the
-            shopper can act on. */}
-        <p className="text-xs text-slate-400 mt-0.5 tabular-nums">
-          {count} product{count === 1 ? "" : "s"}
-        </p>
-      </div>
+      {/* No product count. GET /api/categories does return one per category,
+          but a shopper deciding where to browse isn't choosing by inventory
+          size - the number just competes with the label it sits under. */}
+      <h2 className="font-bold text-slate-900 text-sm leading-snug group-hover:text-violet-600 transition-colors">
+        {category}
+      </h2>
     </Link>
   );
 }

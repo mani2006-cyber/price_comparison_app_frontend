@@ -109,17 +109,17 @@ function CategoryProductsPage() {
             </span>
             <div className="min-w-0">
               <h1 className="text-xl font-extrabold text-slate-900 truncate">{displayName}</h1>
-              {/* A real total now the catalog is curated rather than a
-                  by-product of whatever users had searched, so the number
-                  describes the category instead of overstating it. */}
+              {/* Page position only, never a product total. "Page 2 of 4" is
+                  navigation the pager needs; "6 products" is a number the
+                  shopper can't act on. */}
               <p className="text-sm text-slate-400 tabular-nums">
                 {loading
                   ? "Loading…"
                   : total === 0
                   ? "No products yet"
-                  : `${total} product${total === 1 ? "" : "s"}${
-                      totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""
-                    }`}
+                  : totalPages > 1
+                  ? `Page ${page} of ${totalPages}`
+                  : ""}
               </p>
             </div>
           </div>

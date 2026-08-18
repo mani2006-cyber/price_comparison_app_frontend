@@ -36,18 +36,15 @@ function CategoriesPage() {
     };
   }, []);
 
-  const totalProducts = categories.reduce((sum, c) => sum + (c.count || 0), 0);
-
   return (
     <div className="min-h-screen aurora-bg">
       <main className="max-w-5xl mx-auto px-6 py-8">
         <h1 className="text-xl font-extrabold text-slate-900 mb-1">Browse categories</h1>
-        <p className="text-sm text-slate-400 mb-6 tabular-nums">
-          {loading
-            ? "Loading…"
-            : categories.length === 0
-            ? "Nothing published yet."
-            : `${totalProducts.toLocaleString("en-IN")} products across ${categories.length} categories.`}
+        {/* Says what to do here, rather than counting the catalog. A running
+            total of products and categories describes the database, not
+            anything the shopper came to do. */}
+        <p className="text-sm text-slate-400 mb-6">
+          Pick a category to see what's in it and compare prices across stores.
         </p>
 
         {error && (
@@ -79,7 +76,6 @@ function CategoriesPage() {
               <CategoryCard
                 key={c.category}
                 category={c.category}
-                count={c.count}
                 style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}
               />
             ))}
