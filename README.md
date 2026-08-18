@@ -267,21 +267,47 @@ rating field, so the backend silently falls back to newest-first — shipping
 the option would be a control that looks like it works and doesn't. Screen 3,
 where results are real marketplace products with real ratings, does offer it.
 
+### Two modes behind one click
+
+Screen 3 has two layouts, because the response has two shapes. `GET
+/categories/:category/products/:id` always returns both `listings` and
+`comparison`, with exactly one populated:
+
+| Admin set a `url`? | Populated | What the shopper gets |
+|---|---|---|
+| No | `listings` | A plain live title search — raw hits from every store, no judgement about which is really the same product. Sort control, `?page=` paginates the listings. |
+| Yes | `comparison` | That exact listing through the full compare pipeline — price-gated, similarity-scored cross-marketplace matches, related items, AI summary. No sort control (compare-url has none; `results[]` is already price-ascending), and `?page=` paginates `similarProducts` instead. |
+
+The page branches on **which key is non-null**, never on `adminProduct.url` —
+the response is the authority on which pipeline actually ran.
+
+The hero's "lowest" figure is labelled differently per mode on purpose.
+Comparison mode has the entire match set in one response, so it's a true
+minimum. Search mode has only the current page loaded and a cheaper listing
+could sit on any other page, so it says *"lowest of the 20 shown"*.
+
 ## Known gaps
 
-**The click-through doesn't yet read `result.comparison`.** The backend's
-`GET /categories/:category/products/:id` now returns both `listings` and
-`comparison`, exactly one populated depending on whether the admin gave the
-entry a `url`:
+**Newly added catalog products don't appear on their category page for up to
+3 days.** This is a backend cache bug, not a frontend one, but it's the most
+visible thing an admin will hit. Writing an `AdminProduct` invalidates the
+`categories:list` cache — so the category's *count* updates immediately — but
+nothing invalidates `category-products:*`, so the category's *product list*
+keeps serving the pre-write entry until its TTL expires.
 
-- no `url` → live title search, `listings` populated, `comparison: null`
-- `url` set → the real compare-url pipeline, `comparison` populated,
-  `listings: null`
+Reproduced directly: after adding a 7th Electronics product, `GET
+/api/categories` reported `count: 7` while `GET /api/categories/Electronics &
+Gadgets/products?limit=20` returned `X-Cache: HIT` with `total: 6`, on a key
+with 70 hours left to live. `category-product-listings:*` has the same
+problem in reverse — deleting a product leaves its cached listings behind as
+an orphan.
 
-`CatalogProductPage.jsx` currently reads only `listings`, so an entry with a
-`url` renders the empty state instead of its comparison. Every one of the 90
-seeded entries is url-less, so nothing is broken today — but the admin form
-has no `url` field yet, and the page won't handle one until both are wired.
+The fix is in `adminProduct.repository.js`, whose `invalidateCategoryListCache()`
+deletes one fixed key. It needs a pattern delete, which `utils/cache.js`
+doesn't currently expose (only `get`/`set`/`del`/`getOrSet`) — and note that
+a naive `KEYS` → `del` loop double-prefixes, because the ioredis client is
+constructed with `keyPrefix: 'pricecompare:'` while `KEYS` returns names that
+already include it.
 
 **`platform` doesn't filter.** The backend accepts and records it but always
 searches every marketplace, which is why search has no marketplace filter
@@ -289,4 +315,6 @@ chips — they'd change nothing.
 
 **Description and image can't be cleared.** The backend's `PATCH` schema
 types them as non-empty strings, so the admin form can overwrite either but
-not erase it back to empty.
+not erase it back to empty. `url` is the exception — it's nullable there
+specifically so a card can be reverted to search mode, and the form sends
+`null` when you empty it.
