@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, useLocation } from "react-router-dom";
 import SearchPage from "./pages/search/SearchPage";
 import ComparePage from "./pages/compare-url/ComparePage";
 import ProductPage from "./pages/product/ProductPage";
@@ -125,6 +125,72 @@ function Nav() {
   );
 }
 
+// The shopper chrome - top nav plus its mobile twin, the bottom tab bar -
+// and the routes it wraps. Split out of App only so it can call useLocation,
+// which has to run inside the Router.
+function Shell() {
+  const { pathname } = useLocation();
+
+  // /admin is a separate surface, not another page of the shop. It
+  // authenticates with the shared admin key rather than a user login, so
+  // none of the shopper nav applies there - and a "Log in"/"Log out" state
+  // is worse than irrelevant, since it reflects a user session that has no
+  // bearing on whether the admin key is valid.
+  const isAdmin = pathname.startsWith("/admin");
+
+  return (
+    <>
+      {!isAdmin && <Nav />}
+      {/* pb-20 clears the fixed BottomTabBar on mobile so it never covers
+          the end of a page's content (e.g. a footer or the last card) -
+          md:pb-0 because the tab bar itself is md:hidden past that point.
+          With no tab bar on /admin, there is nothing to clear. */}
+      <div className={isAdmin ? undefined : "pb-20 md:pb-0"}>
+        <Routes>
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/categories/:category" element={<CategoryProductsPage />} />
+          <Route path="/categories/:category/:id" element={<CatalogProductPage />} />
+          <Route path="/compare-url" element={<ComparePage />} />
+          <Route path="/products/:id" element={<ProductPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          {/* Not linked from the nav: /admin authenticates with the shared
+              x-admin-key secret, not a user login, so it isn't a destination
+              for shoppers - it's reached by URL by whoever holds the key. */}
+          <Route path="/admin" element={<AdminPage />} />
+          <Route
+            path="/wishlist"
+            element={
+              <ProtectedRoute>
+                <WishlistPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/alerts"
+            element={
+              <ProtectedRoute>
+                <AlertsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<SearchPage />} />
+        </Routes>
+      </div>
+      {!isAdmin && <BottomTabBar />}
+    </>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -132,52 +198,7 @@ function App() {
         <AlertProvider>
           <NotificationProvider>
             <BrowserRouter>
-              <Nav />
-              {/* pb-20 clears the fixed BottomTabBar on mobile so it never covers
-                  the end of a page's content (e.g. a footer or the last card) -
-                  md:pb-0 because the tab bar itself is md:hidden past that point. */}
-              <div className="pb-20 md:pb-0">
-                <Routes>
-                  <Route path="/search" element={<SearchPage />} />
-                  <Route path="/categories" element={<CategoriesPage />} />
-                  <Route path="/categories/:category" element={<CategoryProductsPage />} />
-                  <Route path="/categories/:category/:id" element={<CatalogProductPage />} />
-                  <Route path="/compare-url" element={<ComparePage />} />
-                  <Route path="/products/:id" element={<ProductPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  {/* Not linked from the nav: /admin authenticates with the shared
-                      x-admin-key secret, not a user login, so it isn't a destination
-                      for shoppers - it's reached by URL by whoever holds the key. */}
-                  <Route path="/admin" element={<AdminPage />} />
-                  <Route
-                    path="/wishlist"
-                    element={
-                      <ProtectedRoute>
-                        <WishlistPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/alerts"
-                    element={
-                      <ProtectedRoute>
-                        <AlertsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/notifications"
-                    element={
-                      <ProtectedRoute>
-                        <NotificationsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route path="*" element={<SearchPage />} />
-                </Routes>
-              </div>
-              <BottomTabBar />
+              <Shell />
             </BrowserRouter>
           </NotificationProvider>
         </AlertProvider>

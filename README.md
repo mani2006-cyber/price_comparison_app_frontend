@@ -110,9 +110,13 @@ Every value has a working default; `npm run dev` needs no `.env`. See
 🔒 wraps in `ProtectedRoute`, which redirects to `/login` when the session is
 gone. 🔑 is a different scheme entirely — see below.
 
-`/admin` is deliberately **not linked from the nav**. It authenticates with a
-shared secret rather than a user login, so it isn't a destination for
-shoppers; it's reached by URL by whoever holds the key.
+`/admin` is deliberately **not linked from the nav, and renders no shopper
+chrome at all** — `Shell` in `App.jsx` omits both the top nav and the mobile
+bottom tab bar there. It authenticates with a shared secret rather than a
+user login, so it isn't a destination for shoppers; it's reached by URL by
+whoever holds the key. A "Log in"/"Log out" control on that page would be
+worse than clutter, since it reflects a user session that has no bearing on
+whether the admin key is valid.
 
 ## Project structure
 
