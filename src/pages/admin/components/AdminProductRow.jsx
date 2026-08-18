@@ -34,6 +34,25 @@ function AdminProductRow({ product, onEdit, onDelete, onToggleStatus, busy, styl
               Hidden
             </span>
           )}
+          {/* Which click behaviour this card has. Worth showing in the list
+              rather than only inside the edit panel: it's the difference
+              between a real comparison and a raw title search, and it's
+              otherwise invisible until you open each entry one at a time. */}
+          {product.url ? (
+            <span
+              title="Clicking this card runs a full price comparison against the linked listing"
+              className="text-[10px] font-bold uppercase tracking-wide text-violet-700 bg-violet-50 border border-violet-200 rounded-full px-1.5 py-0.5 shrink-0"
+            >
+              Compare
+            </span>
+          ) : (
+            <span
+              title="No link set - clicking this card runs a plain title search"
+              className="text-[10px] font-bold uppercase tracking-wide text-slate-400 bg-slate-50 border border-slate-200 rounded-full px-1.5 py-0.5 shrink-0"
+            >
+              Search
+            </span>
+          )}
         </div>
         <h3 className="font-semibold text-slate-900 text-sm leading-snug truncate">{product.title}</h3>
         <p className="text-xs text-slate-400 truncate">

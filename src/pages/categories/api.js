@@ -50,8 +50,21 @@ export async function getCategoryProducts(category, { sortBy, page, limit } = {}
  * unlike the two above — the page shows a skeleton for it rather than a
  * spinner over the whole view.
  *
- * Returns { adminProduct, listings } where listings is the same shape as
- * GET /search: { products, total, page, limit, totalPages, marketplaceFailures }.
+ * Returns { adminProduct, listings, comparison } — both keys always present,
+ * exactly one non-null, depending on whether the admin gave the entry a url:
+ *
+ *   no url  → `listings`, the same shape as GET /search:
+ *             { products, total, page, limit, totalPages, marketplaceFailures }
+ *   url set → `comparison`, the same shape as POST /compare-url:
+ *             { results, matchesFound, similarProducts, similarProductsPage…,
+ *               marketplaceFailures, aiSummary }
+ *
+ * Branch on which is non-null, not on adminProduct.url — the response is the
+ * authority on which pipeline actually ran.
+ *
+ * page/limit mean different things per branch: they paginate `listings` in
+ * search mode, and `comparison.similarProducts` in comparison mode (compare-url
+ * has never paginated results[]). sortBy applies to search mode only.
  */
 export async function getCatalogProductListings(category, id, { sortBy, page, limit } = {}) {
     const params = new URLSearchParams();

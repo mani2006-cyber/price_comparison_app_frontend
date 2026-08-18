@@ -3,7 +3,7 @@ import Button from "../../../components/ui/Button";
 import { XIcon, AlertIcon, BoxIcon } from "../../../components/icons";
 import { formatPrice } from "../../../lib/formatPrice";
 
-const EMPTY = { title: "", description: "", category: "", price: "", image: "", status: "active" };
+const EMPTY = { title: "", description: "", category: "", price: "", image: "", url: "", status: "active" };
 
 /**
  * Create/edit panel for one catalog entry. `product` null means create.
@@ -27,6 +27,7 @@ function AdminProductForm({ product, categories, onSubmit, onClose, saving, erro
             category: product.category || "",
             price: product.price != null ? String(product.price) : "",
             image: product.image || "",
+            url: product.url || "",
             status: product.status || "active",
           }
         : EMPTY
@@ -59,6 +60,14 @@ function AdminProductForm({ product, categories, onSubmit, onClose, saving, erro
     };
     if (form.description.trim()) body.description = form.description.trim();
     if (form.image.trim()) body.image = form.image.trim();
+
+    // url is the one field that CAN be cleared: the PATCH schema types it as
+    // nullable precisely so a card can be reverted to title-search mode.
+    // Sending null only on edit - the create schema isn't nullable, and an
+    // explicit null there would be a 400 rather than "no url".
+    const trimmedUrl = form.url.trim();
+    if (trimmedUrl) body.url = trimmedUrl;
+    else if (product && product.url) body.url = null;
 
     onSubmit(body);
   }
@@ -116,6 +125,51 @@ function AdminProductForm({ product, categories, onSubmit, onClose, saving, erro
             </p>
             {showError("title") && (
               <p className="text-[11px] text-rose-500 font-semibold mt-1">A title is required.</p>
+            )}
+          </div>
+
+          {/* Placed directly under the title because the two are alternatives:
+              whichever is filled in decides what clicking this card actually
+              does. Burying it below price/description would hide the single
+              most consequential choice on this form. */}
+          <div>
+            <label htmlFor="f-url" className={labelClass}>
+              Product link
+            </label>
+            <input
+              id="f-url"
+              value={form.url}
+              onChange={(e) => set("url", e.target.value)}
+              placeholder="https://www.amazon.in/…"
+              className={inputClass}
+            />
+            <div
+              className={`mt-2 rounded-xl border p-3 text-[11px] leading-relaxed ${
+                form.url.trim()
+                  ? "border-violet-100 bg-violet-50/60 text-violet-900"
+                  : "border-violet-100 bg-slate-50 text-slate-500"
+              }`}
+            >
+              {form.url.trim() ? (
+                <>
+                  <span className="font-bold">Comparison mode.</span> Clicking this card runs your
+                  exact listing through the full compare pipeline — genuine cross-marketplace
+                  matches, price-gated and similarity-scored, plus related items and a written
+                  summary of the better deal.
+                </>
+              ) : (
+                <>
+                  <span className="font-bold">Search mode.</span> With no link, clicking this card
+                  runs a plain live search on the title: raw results from every store, with no
+                  judgement about which of them is really the same product. Adding a link is what
+                  turns this card into a real comparison.
+                </>
+              )}
+            </div>
+            {product?.url && !form.url.trim() && (
+              <p className="text-[11px] text-amber-700 font-semibold mt-1.5">
+                Saving now clears the existing link and reverts this card to search mode.
+              </p>
             )}
           </div>
 
