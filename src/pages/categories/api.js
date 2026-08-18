@@ -1,19 +1,31 @@
 import { parseResponse } from "../../lib/http";
 import { API_BASE } from "../../lib/apiBase";
 
-// Public (no auth) - browsing the catalog is the same "look, don't touch"
-// concern as GET /products/:id.
-//
-// There's deliberately no getCategories() wrapper for GET /api/categories:
-// the browse grid is a fixed editorial list (see categoryCatalog.jsx), and
-// this per-category endpoint is reached only by the category links on a
-// product card / product detail, where the name comes from the product
-// itself rather than from that endpoint's list.
+// Public (no auth) — browsing the catalog is the same "look, don't touch"
+// concern as GET /products/:id. All three endpoints read the admin-curated
+// catalog (AdminProduct), which is written through /admin — see
+// pages/admin/api.js for that side.
 
-// sortBy must be one of the backend's SORT_BY_VALUES ('price_asc' |
-// 'price_desc' | 'rating') - anything else is rejected with a 400 by the
-// route's Zod schema, so the UI only ever offers those three plus "default"
-// (omit the param entirely = most recently checked first).
+/** GET /api/categories → [{ category, count }], alphabetical, active only. */
+export async function getCategories() {
+    const res = await fetch(`${API_BASE}/api/categories`);
+    const data = await parseResponse(res);
+    return data.categories;
+}
+
+/**
+ * GET /api/categories/:category/products → the catalog cards in a category.
+ *
+ * These are AdminProduct entries — { _id, title, description, category,
+ * price, image } — NOT marketplace listings. There's no marketplace, rating,
+ * stock or product URL on them, which is why this page renders CatalogCard
+ * rather than the ProductCard used for real listings.
+ *
+ * sortBy accepts the backend's SORT_BY_VALUES, but only price_asc/price_desc
+ * do anything here: 'rating' is a valid enum value route-wide, and an
+ * AdminProduct has no rating field, so the repository silently falls back to
+ * newest-first. The UI therefore doesn't offer it — see CategoryProductsPage.
+ */
 export async function getCategoryProducts(category, { sortBy, page, limit } = {}) {
     const params = new URLSearchParams();
     if (sortBy) params.set("sortBy", sortBy);
@@ -26,5 +38,33 @@ export async function getCategoryProducts(category, { sortBy, page, limit } = {}
     );
     const data = await parseResponse(res, "Category not found");
     // { category, page, limit, total, totalPages, products }
+    return data.result;
+}
+
+/**
+ * GET /api/categories/:category/products/:id → the click-through.
+ *
+ * A catalog entry has no listing behind it, so opening one triggers a real
+ * live multi-marketplace search keyed by its title. That means this call is
+ * genuinely slow on a cache miss (seconds, several marketplaces in parallel),
+ * unlike the two above — the page shows a skeleton for it rather than a
+ * spinner over the whole view.
+ *
+ * Returns { adminProduct, listings } where listings is the same shape as
+ * GET /search: { products, total, page, limit, totalPages, marketplaceFailures }.
+ */
+export async function getCatalogProductListings(category, id, { sortBy, page, limit } = {}) {
+    const params = new URLSearchParams();
+    if (sortBy) params.set("sortBy", sortBy);
+    if (page) params.set("page", String(page));
+    if (limit) params.set("limit", String(limit));
+
+    const qs = params.toString();
+    const res = await fetch(
+        `${API_BASE}/api/categories/${encodeURIComponent(category)}/products/${encodeURIComponent(id)}${
+            qs ? `?${qs}` : ""
+        }`
+    );
+    const data = await parseResponse(res, "Catalog product not found");
     return data.result;
 }

@@ -10,6 +10,8 @@ import NotificationsPage from "./pages/notifications/NotificationsPage";
 import AlertsPage from "./pages/alerts/AlertsPage";
 import CategoriesPage from "./pages/categories/CategoriesPage";
 import CategoryProductsPage from "./pages/categories/CategoryProductsPage";
+import CatalogProductPage from "./pages/categories/CatalogProductPage";
+import AdminPage from "./pages/admin/AdminPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { NotificationProvider, useNotifications } from "./context/NotificationContext";
@@ -139,10 +141,15 @@ function App() {
                   <Route path="/search" element={<SearchPage />} />
                   <Route path="/categories" element={<CategoriesPage />} />
                   <Route path="/categories/:category" element={<CategoryProductsPage />} />
+                  <Route path="/categories/:category/:id" element={<CatalogProductPage />} />
                   <Route path="/compare-url" element={<ComparePage />} />
                   <Route path="/products/:id" element={<ProductPage />} />
                   <Route path="/signup" element={<SignupPage />} />
                   <Route path="/login" element={<LoginPage />} />
+                  {/* Not linked from the nav: /admin authenticates with the shared
+                      x-admin-key secret, not a user login, so it isn't a destination
+                      for shoppers - it's reached by URL by whoever holds the key. */}
+                  <Route path="/admin" element={<AdminPage />} />
                   <Route
                     path="/wishlist"
                     element={

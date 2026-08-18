@@ -1,23 +1,24 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { getCategoryProducts } from "./api";
-import ProductCard from "../../components/ui/ProductCard";
-import SkeletonCard from "../../components/ui/SkeletonCard";
+import CatalogCard from "./components/CatalogCard";
 import Pagination from "../../components/ui/Pagination";
 import StateMessage from "../../components/ui/StateMessage";
 import { InboxIcon, AlertIcon, ChevronLeftIcon } from "../../components/icons";
+import { categoryStyle } from "./categoryCatalog";
 import { config } from "../../lib/config";
 
 const PAGE_SIZE = config.categoryPageSize; // clamped to the backend's max of 50 in config.js
 
-// Value "" means "send no sortBy at all", which the backend treats as its
-// default (most recently checked first). The other three are exactly the
-// backend's SORT_BY_VALUES - anything else would be a 400.
+// 'rating' is a valid sortBy for this route's Zod schema but does nothing
+// here: these are AdminProduct entries, which have no rating field, so the
+// repository quietly falls back to newest-first. Offering it would be a
+// control that looks like it works and doesn't — the live-listings screen
+// (where results DO have ratings) offers it instead.
 const SORT_OPTIONS = [
-  { value: "", label: "Sort: Latest" },
+  { value: "", label: "Sort: Newest" },
   { value: "price_asc", label: "Price: Low to High" },
   { value: "price_desc", label: "Price: High to Low" },
-  { value: "rating", label: "Highest Rated" },
 ];
 
 function CategoryProductsPage() {
@@ -81,17 +82,14 @@ function CategoryProductsPage() {
   const products = result?.products ?? [];
   const total = result?.total ?? 0;
   const totalPages = result?.totalPages ?? 0;
-  // Prefer the name the API echoed back (canonical casing) over the raw URL
-  // segment the user happened to type.
-  const displayName = result?.category || category;
 
-  const subtitle = loading
-    ? "Loading…"
-    : total === 0
-    ? "No products in this category"
-    : totalPages > 1
-    ? `Page ${page} of ${totalPages}`
-    : "";
+  // The API echoes back the raw URL segment as `result.category`, so a visit
+  // to /categories/electronics%20%26%20gadgets echoes "electronics & gadgets"
+  // even though every product in it is filed under "Electronics & Gadgets".
+  // The products carry the canonical casing an admin actually typed, so
+  // prefer that and fall back to the URL only when there are none.
+  const displayName = products[0]?.category || result?.category || category;
+  const { Icon, tint } = categoryStyle(displayName);
 
   return (
     <div className="min-h-screen aurora-bg">
@@ -105,14 +103,25 @@ function CategoryProductsPage() {
         </Link>
 
         <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
-          <div className="min-w-0">
-            <h1 className="text-xl font-extrabold text-slate-900 mb-1 truncate">{displayName}</h1>
-            {/* Deliberately page position only, not a product total - the
-                catalog holds just what earlier searches persisted, so a total
-                here would overstate what the category actually contains.
-                "Page 2 of 4" is navigation the pager needs; "70 products" was
-                a number the user can't act on. */}
-            {subtitle && <p className="text-sm text-slate-400 tabular-nums">{subtitle}</p>}
+          <div className="flex items-center gap-3 min-w-0">
+            <span className={`w-12 h-12 rounded-2xl grid place-items-center shrink-0 ${tint}`}>
+              <Icon className="w-6 h-6" />
+            </span>
+            <div className="min-w-0">
+              <h1 className="text-xl font-extrabold text-slate-900 truncate">{displayName}</h1>
+              {/* A real total now the catalog is curated rather than a
+                  by-product of whatever users had searched, so the number
+                  describes the category instead of overstating it. */}
+              <p className="text-sm text-slate-400 tabular-nums">
+                {loading
+                  ? "Loading…"
+                  : total === 0
+                  ? "No products yet"
+                  : `${total} product${total === 1 ? "" : "s"}${
+                      totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""
+                    }`}
+              </p>
+            </div>
           </div>
 
           <select
@@ -143,21 +152,23 @@ function CategoryProductsPage() {
             subtitle={
               page > 1
                 ? "That page is past the end of this category — try going back a page."
-                : "No products have been indexed in this category yet."
+                : "No products have been published in this category yet."
             }
           />
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {loading && Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={`skel-${i}`} />)}
+          {loading &&
+            Array.from({ length: 8 }).map((_, i) => (
+              <div key={`skel-${i}`} className="card-surface rounded-3xl h-[340px] animate-pulse" />
+            ))}
 
           {!loading &&
             !error &&
             products.map((product, i) => (
-              <ProductCard
-                key={`${product.marketplace}-${product.externalId}`}
+              <CatalogCard
+                key={product._id}
                 product={product}
-                hideCategoryLink
                 style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
               />
             ))}

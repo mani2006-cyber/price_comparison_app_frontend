@@ -20,6 +20,9 @@ dist-ssr
 # Pasted screenshots (e.g. from chat) saved to the project root during dev
 image.png
 
+# Playwright MCP scratch output (snapshots, console logs, screenshots)
+.playwright-mcp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

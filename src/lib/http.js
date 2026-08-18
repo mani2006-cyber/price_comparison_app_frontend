@@ -24,7 +24,13 @@ export function setUnauthorizedHandler(fn) {
     onUnauthorized = fn;
 }
 
-export async function parseResponse(res, notFoundMessage) {
+// `skipUnauthorizedHandler` opts a call out of the global 401 handler above.
+// Only the admin catalog routes need it: they authenticate with a shared
+// `x-admin-key` secret, an entirely separate scheme from the user JWT. A
+// rejected admin key means "that key is wrong", NOT "this user's session
+// died" - letting it reach the handler would log the signed-in shopper out
+// of the app because someone mistyped an admin secret in another tab.
+export async function parseResponse(res, notFoundMessage, { skipUnauthorizedHandler = false } = {}) {
     let data = null;
     try {
         data = await res.json();
@@ -37,7 +43,7 @@ export async function parseResponse(res, notFoundMessage) {
 
     if (!res.ok || dataSuccess === false) {
         if (res.status === 401) {
-            if (onUnauthorized) onUnauthorized();
+            if (onUnauthorized && !skipUnauthorizedHandler) onUnauthorized();
             throw new ApiError(dataError || "Please log in to continue", 401);
         }
         if (res.status === 404) {
