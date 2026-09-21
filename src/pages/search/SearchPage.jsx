@@ -212,18 +212,20 @@ function SearchPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        <SearchFilters filters={filters} onChange={handleFilterChange} disabled={loading} />
-        {hasSearched && !error && (resultCount > 0 || loading) && (
-          <ResultsToolbar
-            resultCount={resultCount}
-            query={query}
-            page={page}
-            totalPages={totalPages}
-            sortBy={sortBy}
-            onSortChange={handleSortChange}
-            disabled={loading}
-          />
-        )}
+        <div className="grid items-start gap-6 lg:grid-cols-[250px_minmax(0,1fr)]">
+          <SearchFilters filters={filters} onChange={handleFilterChange} disabled={loading} />
+          <section className="min-w-0">
+            {hasSearched && !error && (resultCount > 0 || loading) && (
+              <ResultsToolbar
+                resultCount={resultCount}
+                query={query}
+                page={page}
+                totalPages={totalPages}
+                sortBy={sortBy}
+                onSortChange={handleSortChange}
+                disabled={loading}
+              />
+            )}
 
         {!loading && !error && marketplaceFailures.length > 0 && (
           <div className="mb-6">
@@ -265,9 +267,11 @@ function SearchPage() {
             ))}
         </div>
 
-        {!error && (
-          <Pagination page={page} totalPages={totalPages} onChange={handlePageChange} disabled={loading} />
-        )}
+            {!error && (
+              <Pagination page={page} totalPages={totalPages} onChange={handlePageChange} disabled={loading} />
+            )}
+          </section>
+        </div>
       </main>
 
       <footer className="border-t border-slate-200 bg-white py-6 mt-10">
