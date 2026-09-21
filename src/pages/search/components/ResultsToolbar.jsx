@@ -18,7 +18,7 @@ const SORT_OPTIONS = [
   { value: "rating", label: "Highest Rated" },
 ];
 
-function ResultsToolbar({ resultCount, query, page, totalPages, sortBy, onSortChange, disabled }) {
+function ResultsToolbar({ resultCount, query, page, totalPages, sortBy, onSortChange, onClearFilters, hasFilters, disabled }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
       <p className="text-sm font-semibold text-slate-500 tabular-nums">
@@ -26,18 +26,25 @@ function ResultsToolbar({ resultCount, query, page, totalPages, sortBy, onSortCh
         {totalPages > 1 && <span className="font-medium text-slate-400"> · page {page} of {totalPages}</span>}
       </p>
 
-      <select
-        value={sortBy}
-        onChange={(e) => onSortChange(e.target.value)}
-        disabled={disabled}
-        className="text-xs font-bold px-3 py-1.5 rounded-full border border-violet-100 bg-white text-slate-600 outline-none focus:border-violet-400 cursor-pointer disabled:opacity-50"
-      >
-        {SORT_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      <div className="flex items-center gap-3">
+        {hasFilters && (
+          <button type="button" onClick={onClearFilters} disabled={disabled} className="text-xs font-bold text-violet-700 hover:text-violet-900 disabled:opacity-50">
+            Clear filters
+          </button>
+        )}
+        <select
+          value={sortBy}
+          onChange={(e) => onSortChange(e.target.value)}
+          disabled={disabled}
+          className="text-xs font-bold px-3 py-1.5 rounded-full border border-violet-100 bg-white text-slate-600 outline-none focus:border-violet-400 cursor-pointer disabled:opacity-50"
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }

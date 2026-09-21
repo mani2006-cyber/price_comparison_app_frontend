@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { searchProducts, getSearchHistory, deleteSearchHistoryItem } from "./api";
+import { searchAllProducts, getSearchHistory, deleteSearchHistoryItem } from "./api";
+import { filterProducts } from "./filterProducts";
 import ProductCard from "../../components/ui/ProductCard";
 import SkeletonCard from "../../components/ui/SkeletonCard";
 import Pagination from "../../components/ui/Pagination";
@@ -41,6 +42,7 @@ function SearchPage() {
   const [query, setQuery] = useState(activeQuery);
   const [inputValue, setInputValue] = useState(activeQuery);
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [resultCount, setResultCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [marketplaceFailures, setMarketplaceFailures] = useState([]);
@@ -69,41 +71,41 @@ function SearchPage() {
   useEffect(() => {
     setQuery(activeQuery);
     setInputValue(activeQuery);
-    runSearch(activeQuery, { page, sortBy, ...filters });
+    runSearch(activeQuery, { sortBy, ...filters });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeQuery, page, sortBy, filters.category, filters.brand, filters.marketplace, filters.minPrice, filters.maxPrice]);
+  }, [activeQuery, sortBy, filters.category, filters.brand, filters.marketplace, filters.minPrice, filters.maxPrice]);
+
+  useEffect(() => {
+    const pageStart = (page - 1) * PAGE_SIZE;
+    setProducts(filteredProducts.slice(pageStart, pageStart + PAGE_SIZE));
+  }, [filteredProducts, page]);
 
   useEffect(() => {
     loadHistory();
   }, [loadHistory]);
 
-  async function runSearch(term, { page: pageArg, sortBy: sortArg, category, brand, marketplace, minPrice, maxPrice } = {}) {
+  async function runSearch(term, { sortBy: sortArg } = {}) {
     const trimmed = term.trim();
     if (!trimmed) return;
     setLoading(true);
     setError(null);
     setHasSearched(true);
     try {
-      const data = await searchProducts(trimmed, isAuthenticated ? accessToken : undefined, {
+      const data = await searchAllProducts(trimmed, isAuthenticated ? accessToken : undefined, {
         sortBy: sortArg || undefined,
-        page: pageArg,
         limit: PAGE_SIZE,
-        category,
-        brand,
-        marketplace,
-        minPrice,
-        maxPrice,
       });
-      setProducts(data.products ?? []);
-      // resultCount is the total across every page, not this page's length -
-      // so it stays correct as the user pages through.
-      setResultCount(data.resultCount ?? (data.products ?? []).length);
-      setTotalPages(data.totalPages ?? 0);
+      const filteredProducts = filterProducts(data.products ?? [], filters);
+      const filteredTotalPages = Math.ceil(filteredProducts.length / PAGE_SIZE);
+      setFilteredProducts(filteredProducts);
+      setResultCount(filteredProducts.length);
+      setTotalPages(filteredTotalPages);
       setMarketplaceFailures(data.marketplaceFailures ?? []);
       loadHistory();
     } catch (err) {
       setError(err.message);
       setProducts([]);
+      setFilteredProducts([]);
       setTotalPages(0);
       setMarketplaceFailures([]);
     } finally {
@@ -172,6 +174,13 @@ function SearchPage() {
     setSearchParams(params);
   }
 
+  function handleClearFilters() {
+    const params = new URLSearchParams(searchParams);
+    ["category", "brand", "marketplace", "minPrice", "maxPrice", "page"].forEach((key) => params.delete(key));
+    params.set("q", activeQuery);
+    setSearchParams(params);
+  }
+
   // Products are already filtered, sorted and paginated by the server - the
   // page renders exactly what it was given.
   const hasResults = products.length > 0;
@@ -223,6 +232,8 @@ function SearchPage() {
                 totalPages={totalPages}
                 sortBy={sortBy}
                 onSortChange={handleSortChange}
+                onClearFilters={handleClearFilters}
+                hasFilters={Object.values(filters).some(Boolean)}
                 disabled={loading}
               />
             )}

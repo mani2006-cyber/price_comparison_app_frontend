@@ -1,21 +1,49 @@
 import { useEffect, useState } from "react";
 
-const CATEGORIES = [
-  "Mobiles",
-  "Laptops",
-  "Earbuds & Headphones",
-  "Smartwatches",
-  "TVs",
-  "Home Appliances",
-  "Home & Kitchen",
-  "Clothing",
-  "Shoes",
-  "Eyewear",
-  "Beauty & Personal Care",
-  "Books",
-  "Toys",
-  "Sports & Outdoors",
-  "Automotive",
+const CATEGORY_GROUPS = [
+  {
+    label: "Electronics",
+    items: [
+      "Mobiles", "Laptops", "Tablets", "Computer Accessories", "Monitors",
+      "Cameras", "Earbuds & Headphones", "Smartwatches", "TVs", "Speakers",
+    ],
+  },
+  {
+    label: "Home",
+    items: [
+      "Home Appliances", "Home & Kitchen", "Refrigerators", "Washing Machines",
+      "Air Conditioners", "Fans", "Cookware", "Furniture", "Home Decor",
+    ],
+  },
+  {
+    label: "Fashion",
+    items: [
+      "Cloths", "Shirts", "T-Shirts", "Trousers", "Jeans", "Dresses",
+      "Sarees", "Kurtas", "Jackets", "Innerwear", "Eyewear",
+    ],
+  },
+  {
+    label: "Footwear",
+    items: ["Shoes", "Slippers", "Sandals", "Sneakers", "Boots", "Heels"],
+  },
+  {
+    label: "Personal Care",
+    items: [
+      "Beauty & Personal Care", "Makeup", "Skincare", "Hair Care", "Fragrances",
+      "Grooming", "Bath & Body",
+    ],
+  },
+  {
+    label: "Entertainment & Hobbies",
+    items: [
+      "Books", "Toys", "Board Games", "Video Games", "Sports & Outdoors",
+      "Fitness Equipment", "Musical Instruments",
+      ],
+      },
+  {
+    label: "Automotive",
+    items: ["Automotive", "Car Accessories", "Bike Accessories", "Tyres", "Tools"],
+  },
 ];
 
 const SOURCES = [
@@ -31,6 +59,7 @@ const SOURCES = [
 function SearchFilters({ filters, onChange, disabled }) {
   const [draft, setDraft] = useState(filters);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState({ Electronics: true });
 
   useEffect(() => {
     setDraft(filters);
@@ -72,13 +101,34 @@ function SearchFilters({ filters, onChange, disabled }) {
 
         <fieldset className="mb-6">
           <legend className="mb-3 text-xs font-extrabold uppercase tracking-wide text-slate-500">Category</legend>
-          <div className="space-y-1" role="group" aria-label="Filter by category">
-            {CATEGORIES.map((category) => (
-              <button key={category} type="button" disabled={disabled} aria-pressed={filters.category === category} onClick={() => { updateDraft({ category }); onChange({ category }); }} className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors disabled:opacity-50 ${filters.category === category ? "bg-violet-50 font-bold text-violet-700" : "text-slate-600 hover:bg-slate-50"}`}>
-                <span>{category}</span>
-                <span className={`h-4 w-4 rounded-full border-2 ${filters.category === category ? "border-violet-600 bg-violet-600 shadow-[inset_0_0_0_3px_white]" : "border-slate-200"}`} />
-              </button>
-            ))}
+          <div className="space-y-2" role="group" aria-label="Filter by category">
+            {CATEGORY_GROUPS.map((group) => {
+              const isOpen = openGroups[group.label];
+              const hasSelectedItem = group.items.includes(filters.category);
+              return (
+                <div key={group.label} className="border-b border-slate-100 pb-2 last:border-0">
+                  <button
+                    type="button"
+                    onClick={() => setOpenGroups((current) => ({ ...current, [group.label]: !current[group.label] }))}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center justify-between py-2 text-left text-sm font-extrabold text-slate-700"
+                  >
+                    <span className={hasSelectedItem ? "text-violet-700" : ""}>{group.label}</span>
+                    <span className="text-slate-400">{isOpen ? "-" : "+"}</span>
+                  </button>
+                  {isOpen && (
+                    <div className="space-y-1 pb-1 pl-2">
+                      {group.items.map((category) => (
+                        <button key={category} type="button" disabled={disabled} aria-pressed={filters.category === category} onClick={() => { updateDraft({ category }); onChange({ category }); }} className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors disabled:opacity-50 ${filters.category === category ? "bg-violet-50 font-bold text-violet-700" : "text-slate-600 hover:bg-slate-50"}`}>
+                          <span>{category}</span>
+                          <span className={`h-4 w-4 rounded-full border-2 ${filters.category === category ? "border-violet-600 bg-violet-600 shadow-[inset_0_0_0_3px_white]" : "border-slate-200"}`} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </fieldset>
 
@@ -130,19 +180,16 @@ function SearchFilters({ filters, onChange, disabled }) {
         </button>
       </div>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Search filters">
-          <button type="button" aria-label="Close filters" onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-slate-900/40" />
-          <div className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-3xl bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl">
-            <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-slate-200" />
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-lg font-extrabold text-slate-900">Filters</h2>
-              <button type="button" onClick={() => setMobileOpen(false)} className="text-sm font-bold text-slate-500">Close</button>
-            </div>
-            {renderFilterForm()}
+      <div className={`fixed inset-0 z-50 lg:hidden ${mobileOpen ? "pointer-events-auto" : "pointer-events-none"}`} role="dialog" aria-modal="true" aria-label="Search filters" aria-hidden={!mobileOpen}>
+        <button type="button" aria-label="Close filters" onClick={() => setMobileOpen(false)} className={`absolute inset-0 bg-slate-900/25 transition-opacity duration-300 ${mobileOpen ? "opacity-100" : "opacity-0"}`} />
+        <aside className={`absolute left-0 top-0 h-full w-[min(72vw,280px)] overflow-y-auto border-r border-slate-200 bg-white p-4 pb-20 shadow-2xl transition-transform duration-300 ease-out ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+          <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+            <h2 className="text-lg font-extrabold text-slate-900">Filters</h2>
+            <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg px-2 py-1 text-sm font-bold text-slate-500 hover:bg-slate-100">Close</button>
           </div>
-        </div>
-      )}
+          {renderFilterForm()}
+        </aside>
+      </div>
     </>
   );
 }
