@@ -5,6 +5,7 @@ import ProductCard from "../../components/ui/ProductCard";
 import SkeletonCard from "../../components/ui/SkeletonCard";
 import Pagination from "../../components/ui/Pagination";
 import ResultsToolbar from "./components/ResultsToolbar";
+import SearchFilters from "./components/SearchFilters";
 import StateMessage from "../../components/ui/StateMessage";
 import FailureBanner from "../../components/ui/FailureBanner";
 import SearchSuggestionsDropdown from "./components/SearchSuggestionsDropdown";
@@ -29,6 +30,13 @@ function SearchPage() {
   // and page 3 of a sorted search is a link someone can send.
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
   const sortBy = searchParams.get("sortBy") || "";
+  const filters = {
+    category: searchParams.get("category") || "",
+    brand: searchParams.get("brand") || "",
+    marketplace: searchParams.get("marketplace") || "",
+    minPrice: searchParams.get("minPrice") || "",
+    maxPrice: searchParams.get("maxPrice") || "",
+  };
 
   const [query, setQuery] = useState(activeQuery);
   const [inputValue, setInputValue] = useState(activeQuery);
@@ -61,15 +69,15 @@ function SearchPage() {
   useEffect(() => {
     setQuery(activeQuery);
     setInputValue(activeQuery);
-    runSearch(activeQuery, { page, sortBy });
+    runSearch(activeQuery, { page, sortBy, ...filters });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeQuery, page, sortBy]);
+  }, [activeQuery, page, sortBy, filters.category, filters.brand, filters.marketplace, filters.minPrice, filters.maxPrice]);
 
   useEffect(() => {
     loadHistory();
   }, [loadHistory]);
 
-  async function runSearch(term, { page: pageArg, sortBy: sortArg } = {}) {
+  async function runSearch(term, { page: pageArg, sortBy: sortArg, category, brand, marketplace, minPrice, maxPrice } = {}) {
     const trimmed = term.trim();
     if (!trimmed) return;
     setLoading(true);
@@ -80,6 +88,11 @@ function SearchPage() {
         sortBy: sortArg || undefined,
         page: pageArg,
         limit: PAGE_SIZE,
+        category,
+        brand,
+        marketplace,
+        minPrice,
+        maxPrice,
       });
       setProducts(data.products ?? []);
       // resultCount is the total across every page, not this page's length -
@@ -148,6 +161,17 @@ function SearchPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function handleFilterChange(changes) {
+    const params = new URLSearchParams(searchParams);
+    Object.entries(changes).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    });
+    params.delete("page");
+    params.set("q", activeQuery);
+    setSearchParams(params);
+  }
+
   // Products are already filtered, sorted and paginated by the server - the
   // page renders exactly what it was given.
   const hasResults = products.length > 0;
@@ -188,6 +212,7 @@ function SearchPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+        <SearchFilters filters={filters} onChange={handleFilterChange} disabled={loading} />
         {hasSearched && !error && (resultCount > 0 || loading) && (
           <ResultsToolbar
             resultCount={resultCount}
