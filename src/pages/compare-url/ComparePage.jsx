@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { compareUrl } from "./api";
+import { API_BASE } from "../../lib/apiBase";
 import UrlInputForm from "./components/UrlInputForm";
 import ImageGallery from "./components/ImageGallery";
 import ProductHeroPanel from "./components/ProductHeroPanel";
@@ -29,10 +30,14 @@ function ComparePage() {
   const [loading, setLoading] = useState(Boolean(urlParam));
   const [error, setError] = useState(null);
   const [hasSearched, setHasSearched] = useState(Boolean(urlParam));
+  const inFlightCompareRef = useRef(null);
 
   const runCompare = useCallback(async (url, page) => {
     const trimmed = url.trim();
     if (!trimmed) return;
+    const requestKey = `${trimmed}|${page}`;
+    if (inFlightCompareRef.current === requestKey) return;
+    inFlightCompareRef.current = requestKey;
 
     setLoading(true);
     setError(null);
@@ -41,9 +46,14 @@ function ComparePage() {
       const data = await compareUrl(trimmed, { page });
       setResult(data);
     } catch (err) {
-      setError(err.message);
+      setError(
+        err instanceof TypeError
+          ? `Could not reach the comparison service at ${API_BASE}. Check that the backend is running, reachable from this device, and allows this app through CORS.`
+          : err.message
+      );
       setResult(null);
     } finally {
+      if (inFlightCompareRef.current === requestKey) inFlightCompareRef.current = null;
       setLoading(false);
     }
   }, []);

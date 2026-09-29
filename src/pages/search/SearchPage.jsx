@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { searchAllProducts, getSearchHistory, deleteSearchHistoryItem } from "./api";
+import { searchProducts, getSearchHistory, deleteSearchHistoryItem } from "./api";
 import { filterProducts } from "./filterProducts";
 import ProductCard from "../../components/ui/ProductCard";
 import SkeletonCard from "../../components/ui/SkeletonCard";
@@ -91,9 +91,8 @@ function SearchPage() {
     setError(null);
     setHasSearched(true);
     try {
-      const data = await searchAllProducts(trimmed, isAuthenticated ? accessToken : undefined, {
+      const data = await searchProducts(trimmed, isAuthenticated ? accessToken : undefined, {
         sortBy: sortArg || undefined,
-        limit: PAGE_SIZE,
       });
       const filteredProducts = filterProducts(data.products ?? [], filters);
       const filteredTotalPages = Math.ceil(filteredProducts.length / PAGE_SIZE);

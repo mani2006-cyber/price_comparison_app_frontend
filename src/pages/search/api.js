@@ -5,43 +5,16 @@ import { API_BASE } from "../../lib/apiBase";
 // 'price_desc' | 'rating'); omitting it leaves results in the order the
 // adapters returned them, which is their own relevance ordering.
 //
-// Sorting is applied server-side across the WHOLE result set before it's
-// paginated, so it can't be done in the client instead - that would only
-// reorder the current page.
-export async function searchProducts(query, accessToken, { sortBy, page, limit } = {}) {
+// The backend returns the complete merged result set. Filters and pagination
+// are handled by the frontend after this request completes.
+export async function searchProducts(query, accessToken, { sortBy } = {}) {
     const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
 
     const params = new URLSearchParams({ q: query });
     if (sortBy) params.set("sortBy", sortBy);
-    if (page) params.set("page", String(page));
-    if (limit) params.set("limit", String(limit));
     const res = await fetch(`${API_BASE}/api/search?${params.toString()}`, { headers });
-    // { query, resultCount (total across all pages), products (this page),
-    //   page, limit, totalPages, marketplaceFailures }
+    // { query, resultCount, products, marketplaceFailures }
     return parseResponse(res);
-}
-
-export async function searchAllProducts(query, accessToken, { sortBy, limit } = {}) {
-    const firstPage = await searchProducts(query, accessToken, { sortBy, page: 1, limit });
-    const totalPages = firstPage.totalPages ?? 1;
-
-    if (totalPages <= 1) return firstPage;
-
-    const remainingPages = await Promise.all(
-        Array.from({ length: totalPages - 1 }, (_, index) =>
-            searchProducts(query, accessToken, { sortBy, page: index + 2, limit })
-        )
-    );
-
-    return {
-        ...firstPage,
-        products: [
-            ...(firstPage.products ?? []),
-            ...remainingPages.flatMap((page) => page.products ?? []),
-        ],
-        page: 1,
-        totalPages: 1,
-    };
 }
 
 export async function getSearchHistory(accessToken) {
