@@ -2,6 +2,10 @@ function contains(value, query) {
   return String(value ?? "").toLowerCase().includes(String(query ?? "").trim().toLowerCase());
 }
 
+function words(value) {
+  return String(value ?? "").toLowerCase().match(/[a-z0-9]+/g) ?? [];
+}
+
 function matchesCategory(product, categoryQuery) {
   if (!categoryQuery) return true;
 
@@ -10,8 +14,10 @@ function matchesCategory(product, categoryQuery) {
     : product.categoryPath
       ? [product.categoryPath]
       : [];
+  const queryWords = words(categoryQuery).filter((word) => word.length > 1);
+  const productCategories = [product.category, ...categoryPath];
 
-  return [product.category, ...categoryPath].some((value) => contains(value, categoryQuery));
+  return queryWords.length > 0 && queryWords.every((word) => productCategories.some((value) => contains(value, word)));
 }
 
 export function filterProducts(products, { category, brand, marketplace, minPrice, maxPrice } = {}) {

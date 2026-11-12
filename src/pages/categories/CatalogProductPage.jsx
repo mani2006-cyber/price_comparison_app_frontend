@@ -7,6 +7,8 @@ import Pagination from "../../components/ui/Pagination";
 import StateMessage from "../../components/ui/StateMessage";
 import FailureBanner from "../../components/ui/FailureBanner";
 import AiSummaryPanel from "../../components/ui/AiSummaryPanel";
+import SearchFilters from "../search/components/SearchFilters";
+import { filterProducts } from "../search/filterProducts";
 import OffersPanel from "../compare-url/components/OffersPanel";
 import SimilarProductsPanel from "../compare-url/components/SimilarProductsPanel";
 import { InboxIcon, AlertIcon, ChevronLeftIcon, ConfusedIcon } from "../../components/icons";
@@ -51,6 +53,13 @@ function CatalogProductPage() {
 
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
   const sortBy = searchParams.get("sortBy") || "";
+  const filters = {
+    category: searchParams.get("category") || "",
+    brand: searchParams.get("brand") || "",
+    marketplace: searchParams.get("marketplace") || "",
+    minPrice: searchParams.get("minPrice") || "",
+    maxPrice: searchParams.get("maxPrice") || "",
+  };
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -94,6 +103,10 @@ function CatalogProductPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function handleFilterChange(changes) {
+    updateParams({ ...changes, page: 1 });
+  }
+
   const adminProduct = result?.adminProduct ?? null;
   const listings = result?.listings ?? null;
   const comparison = result?.comparison ?? null;
@@ -101,6 +114,8 @@ function CatalogProductPage() {
 
   const matches = comparison?.results ?? [];
   const products = listings?.products ?? [];
+  const filteredProducts = filterProducts(products, filters);
+  const visibleProducts = filteredProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // The lowest figure shown next to the reference price, and what it's
   // honestly a minimum OF, differ per mode:
@@ -123,7 +138,8 @@ function CatalogProductPage() {
   // compare-url has never paginated results[], and there is no sortBy for it
   // either (results[] is always price-ascending already).
   const similarTotalPages = comparison?.similarProductsTotalPages ?? 0;
-  const totalPages = isComparison ? similarTotalPages : listings?.totalPages ?? 0;
+  const totalPages = isComparison ? similarTotalPages : Math.ceil(filteredProducts.length / PAGE_SIZE);
+  const hasActiveFilters = Object.values(filters).some(Boolean);
 
   return (
     <div className="min-h-screen aurora-bg">
@@ -252,13 +268,15 @@ function CatalogProductPage() {
 
         {/* ── Search mode: no link, so a plain live title search ──────── */}
         {!loading && !error && !isComparison && (
-          <>
+          <div className="grid items-start gap-6 lg:grid-cols-[250px_minmax(0,1fr)]">
+            <SearchFilters filters={filters} onChange={handleFilterChange} disabled={loading} />
+            <section className="min-w-0">
             <div className="flex flex-wrap items-end justify-between gap-4 mb-5">
               <div className="min-w-0">
                 <h2 className="text-base font-extrabold text-slate-900">Live listings</h2>
                 <p className="text-xs text-slate-400 tabular-nums mt-0.5">
-                  {listings?.total
-                    ? `${listings.total.toLocaleString("en-IN")} found${
+                  {filteredProducts.length
+                    ? `${filteredProducts.length.toLocaleString("en-IN")} found${
                         totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""
                       } · matched on title`
                     : "No listings found"}
@@ -285,19 +303,21 @@ function CatalogProductPage() {
               </div>
             )}
 
-            {products.length === 0 ? (
+            {visibleProducts.length === 0 ? (
               <StateMessage
                 icon={InboxIcon}
-                title="No listings right now"
+                title={hasActiveFilters ? "No listings match these filters" : page > 1 ? "Nothing on this page" : "No listings right now"}
                 subtitle={
-                  page > 1
+                  hasActiveFilters
+                    ? "Adjust or clear the filters to see more listings."
+                    : page > 1
                     ? "That page is past the end of these results — try going back a page."
                     : "No store returned a match for this product. Try again in a little while."
                 }
               />
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {products.map((product, i) => (
+                {visibleProducts.map((product, i) => (
                   <ProductCard
                     key={`${product.marketplace}-${product.externalId}`}
                     product={product}
@@ -314,7 +334,8 @@ function CatalogProductPage() {
               onChange={handlePageChange}
               disabled={loading}
             />
-          </>
+            </section>
+          </div>
         )}
       </main>
     </div>

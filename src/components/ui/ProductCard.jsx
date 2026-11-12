@@ -142,7 +142,7 @@ function ProductCard({ product, style, hideCategoryLink = false }) {
       </div>
 
       {comparePath && (
-        <Link to={comparePath} className="btn-primary mt-auto h-9 text-sm">
+        <Link to={comparePath} className="btn-primary mt-auto h-9 w-full whitespace-nowrap text-xs sm:text-sm">
           Compare prices
         </Link>
       )}

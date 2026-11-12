@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Stars from "../../../components/ui/Stars";
 import MarketplaceBadge from "../../../components/ui/MarketplaceBadge";
 import WishlistButton from "../../../components/ui/WishlistButton";
@@ -82,6 +83,15 @@ function ProductInfoPanel({ product }) {
         <p className="text-xs text-slate-500 mb-5 flex items-center gap-1.5">
           <TruckIcon className="w-3.5 h-3.5 shrink-0" /> {delivery.estimate}
         </p>
+      )}
+
+      {rawUrl && (
+        <Link
+          to={`/compare-url?url=${encodeURIComponent(rawUrl)}`}
+          className="btn-primary mb-3 flex h-11 w-full items-center justify-center whitespace-nowrap text-sm"
+        >
+          Compare prices
+        </Link>
       )}
 
       {rawUrl && (

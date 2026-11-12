@@ -49,8 +49,8 @@ function CatalogCard({ product, style }) {
         <p className="text-[11px] text-slate-400 mt-0.5">Indicative — live prices on click</p>
       </div>
 
-      <span className="btn-primary mt-auto h-9 text-sm">
-        <SearchIcon className="w-4 h-4" />
+      <span className="btn-primary mt-auto h-9 w-full whitespace-nowrap text-[11px] sm:text-sm">
+        <SearchIcon className="hidden h-4 w-4 sm:block" />
         Compare prices
       </span>
     </Link>
