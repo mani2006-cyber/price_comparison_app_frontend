@@ -1,7 +1,8 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAlerts } from "../context/AlertContext";
-import { GridIcon, SearchIcon, HeartIcon, BellIcon } from "./icons";
+import { useNotifications } from "../context/NotificationContext";
+import { GridIcon, SearchIcon, HeartIcon, BellIcon, TagIcon } from "./icons";
 
 // `end: false` on Browse so the tab stays highlighted while you're inside a
 // category (/categories/Headphones), not just on the index. Search keeps the
@@ -12,23 +13,21 @@ import { GridIcon, SearchIcon, HeartIcon, BellIcon } from "./icons";
 const TABS = [
   { to: "/categories", label: "Browse", Icon: GridIcon, end: false },
   { to: "/search", label: "Search", Icon: SearchIcon },
+  { to: "/notifications", label: "Notifications", Icon: BellIcon, authOnly: true },
   { to: "/wishlist", label: "Wishlist", Icon: HeartIcon, authOnly: true },
-  { to: "/alerts", label: "Alerts", Icon: BellIcon, authOnly: true },
+  { to: "/alerts", label: "Alerts", Icon: TagIcon, authOnly: true },
 ];
 
 /**
- * Mobile-only bottom tab bar (Home / Search / Wishlist / Alerts). The old
- * single top nav had to fit every link (Search, Compare, Wishlist, Alerts,
- * notifications, account) in one row - on a phone that meant a horizontally
- * scrolling strip with most of it scrolled out of view. This moves the four
- * most-used destinations to a fixed bottom bar (the standard shopping-app
- * pattern) and leaves the top bar with just the logo, Compare by Link, and
- * account actions - see App.jsx's Nav, which hides those same four links on
- * small screens so nothing is offered in two places at once.
+ * Mobile-only bottom tab bar (Browse / Search / Notifications / Wishlist / Alerts).
+ * The old single top nav had to fit every link in one row, so this fixed bar
+ * keeps the main destinations visible on phones. App.jsx's Nav hides these
+ * destinations on small screens so nothing is offered in two places at once.
  */
 function BottomTabBar() {
   const { isAuthenticated } = useAuth();
   const { alerts } = useAlerts();
+  const { unreadCount } = useNotifications();
   const activeAlertCount = alerts.filter((a) => a.status === "active").length;
 
   return (
@@ -36,12 +35,12 @@ function BottomTabBar() {
       className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-violet-100 pb-[env(safe-area-inset-bottom)]"
       aria-label="Primary"
     >
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-5">
         {TABS.map(({ to, label, Icon, authOnly, end = true }) => {
+          const badgeCount = label === "Notifications" ? unreadCount : label === "Alerts" ? activeAlertCount : 0;
+
           if (authOnly && !isAuthenticated) {
-            // Logged out: send Wishlist/Alerts taps to login instead of hiding
-            // the tab entirely - keeps the bar's 4-item layout stable rather
-            // than reflowing to fewer columns depending on auth state.
+            // Logged out: send protected tabs to login instead of hiding them.
             return (
               <NavLink
                 key={label}
@@ -50,7 +49,7 @@ function BottomTabBar() {
                 className="flex flex-col items-center justify-center gap-1 py-2.5 text-slate-400"
               >
                 <Icon className="w-5 h-5" />
-                <span className="text-[11px] font-semibold">{label}</span>
+                <span className={label === "Notifications" ? "text-[10px] font-semibold" : "text-[11px] font-semibold"}>{label}</span>
               </NavLink>
             );
           }
@@ -68,13 +67,13 @@ function BottomTabBar() {
             >
               <span className="relative">
                 <Icon className="w-5 h-5" />
-                {label === "Alerts" && activeAlertCount > 0 && (
+                {badgeCount > 0 && (
                   <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-rose-500 text-white text-[9px] font-bold grid place-items-center leading-none">
-                    {activeAlertCount > 9 ? "9+" : activeAlertCount}
+                    {badgeCount > 9 ? "9+" : badgeCount}
                   </span>
                 )}
               </span>
-              <span className="text-[11px] font-semibold">{label}</span>
+              <span className={label === "Notifications" ? "text-[10px] font-semibold" : "text-[11px] font-semibold"}>{label}</span>
             </NavLink>
           );
         })}

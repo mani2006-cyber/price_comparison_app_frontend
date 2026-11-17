@@ -1,6 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
-import { getNotifications, markNotificationRead, markAllNotificationsRead, notificationStreamUrl } from "../pages/notifications/api";
+import {
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  deleteNotification,
+  notificationStreamUrl,
+} from "../pages/notifications/api";
 
 const NotificationContext = createContext(null);
 
@@ -84,6 +90,15 @@ export function NotificationProvider({ children }) {
     setUnreadCount(0);
   }, [accessToken]);
 
+  const removeNotification = useCallback(async (id) => {
+    const notification = notifications.find((item) => item._id === id);
+    await deleteNotification(accessToken, id);
+    setNotifications((prev) => prev.filter((item) => item._id !== id));
+    if (notification && !notification.isRead) {
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
+  }, [accessToken, notifications]);
+
   const value = {
     notifications,
     unreadCount,
@@ -91,6 +106,7 @@ export function NotificationProvider({ children }) {
     refresh,
     markRead,
     markAllRead,
+    removeNotification,
   };
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;

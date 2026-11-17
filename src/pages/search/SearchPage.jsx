@@ -41,7 +41,6 @@ function SearchPage() {
 
   const [query, setQuery] = useState(activeQuery);
   const [inputValue, setInputValue] = useState(activeQuery);
-  const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [resultCount, setResultCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -76,11 +75,6 @@ function SearchPage() {
   }, [activeQuery, sortBy, filters.category, filters.brand, filters.marketplace, filters.minPrice, filters.maxPrice]);
 
   useEffect(() => {
-    const pageStart = (page - 1) * PAGE_SIZE;
-    setProducts(filteredProducts.slice(pageStart, pageStart + PAGE_SIZE));
-  }, [filteredProducts, page]);
-
-  useEffect(() => {
     loadHistory();
   }, [loadHistory]);
 
@@ -103,7 +97,6 @@ function SearchPage() {
       loadHistory();
     } catch (err) {
       setError(err.message);
-      setProducts([]);
       setFilteredProducts([]);
       setTotalPages(0);
       setMarketplaceFailures([]);
@@ -180,8 +173,10 @@ function SearchPage() {
     setSearchParams(params);
   }
 
-  // Products are already filtered, sorted and paginated by the server - the
-  // page renders exactly what it was given.
+  // Filtering is client-side, sorting is server-side, and the current page is
+  // sliced here so the empty state and product grid always use the same results.
+  const pageStart = (page - 1) * PAGE_SIZE;
+  const products = filteredProducts.slice(pageStart, pageStart + PAGE_SIZE);
   const hasResults = products.length > 0;
 
   return (

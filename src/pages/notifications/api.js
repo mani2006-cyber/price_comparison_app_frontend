@@ -27,6 +27,14 @@ export async function markAllNotificationsRead(accessToken) {
     return data.modifiedCount ?? 0;
 }
 
+export async function deleteNotification(accessToken, id) {
+    const res = await fetch(`${API_BASE}/api/notifications/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return parseResponse(res, "Notification not found");
+}
+
 // EventSource can't set an Authorization header, so the access token
 // travels as a `?token=` query param on this one endpoint (server-side
 // counterpart: requireAuthForStream in auth.middleware.js).

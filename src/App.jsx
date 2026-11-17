@@ -29,13 +29,15 @@ function NotificationBell() {
     <NavLink
       to="/notifications"
       title="Notifications"
+      aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
       className={({ isActive }) =>
-        `relative h-9 w-9 grid place-items-center rounded-lg transition-colors ${
+        `relative hidden md:flex items-center gap-2 h-9 px-3 rounded-lg transition-colors ${
           isActive ? "bg-violet-50 text-violet-600" : "text-slate-500 hover:bg-slate-100"
         }`
       }
     >
       <BellIcon className="w-[18px] h-[18px]" />
+      <span className="text-sm font-semibold">Notifications</span>
       {unreadCount > 0 && (
         <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold grid place-items-center leading-none">
           {unreadCount > 99 ? "99+" : unreadCount}
@@ -55,10 +57,8 @@ function Nav() {
         : "text-slate-500 hover:bg-violet-50"
     }`;
 
-  // Search/Wishlist/Alerts now live in the bottom tab bar on mobile (see
-  // BottomTabBar.jsx) - hiding them here too would mean offering the same
-  // destination in two places on a phone, which is what made the top nav
-  // overflow into a horizontally-scrolling strip in the first place.
+  // Main shopping destinations live in the bottom tab bar on mobile (see
+  // BottomTabBar.jsx), so the top nav can stay compact on phones.
   const desktopOnlyLinkClass = (state) => `${linkClass(state)} hidden md:inline-flex`;
 
   const linkStyle = ({ isActive }) =>

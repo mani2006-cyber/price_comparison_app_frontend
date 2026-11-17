@@ -7,9 +7,10 @@ import Button from "../../components/ui/Button";
 import { BellIcon, AlertIcon } from "../../components/icons";
 
 function NotificationsPage() {
-  const { notifications, unreadCount, loaded, refresh, markRead, markAllRead } = useNotifications();
+  const { notifications, unreadCount, loaded, refresh, markRead, markAllRead, removeNotification } = useNotifications();
   const [error, setError] = useState(null);
   const [markingAll, setMarkingAll] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     // Refresh on direct visit, same reasoning as WishlistPage: NotificationProvider
@@ -35,6 +36,18 @@ function NotificationsPage() {
       setError(err.message || "Couldn't mark everything as read. Please try again.");
     } finally {
       setMarkingAll(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    setDeletingId(id);
+    setError(null);
+    try {
+      await removeNotification(id);
+    } catch (err) {
+      setError(err.message || "Couldn't delete that notification. Please try again.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -71,7 +84,13 @@ function NotificationsPage() {
         {loaded && notifications.length > 0 && (
           <div className="space-y-3 animate-in">
             {notifications.map((notification) => (
-              <NotificationItem key={notification._id} notification={notification} onRead={handleRead} />
+              <NotificationItem
+                key={notification._id}
+                notification={notification}
+                onRead={handleRead}
+                onDelete={handleDelete}
+                deleting={deletingId === notification._id}
+              />
             ))}
           </div>
         )}
