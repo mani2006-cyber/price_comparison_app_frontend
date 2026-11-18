@@ -4,6 +4,8 @@ import ComparePage from "./pages/compare-url/ComparePage";
 import ProductPage from "./pages/product/ProductPage";
 import SignupPage from "./pages/signup/SignupPage";
 import LoginPage from "./pages/login/LoginPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import AccountSecurityPage from "./pages/auth/AccountSecurityPage";
 import WishlistPage from "./pages/wishlist/WishlistPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotificationsPage from "./pages/notifications/NotificationsPage";
@@ -16,7 +18,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { NotificationProvider, useNotifications } from "./context/NotificationContext";
 import { AlertProvider } from "./context/AlertContext";
-import { LogoMark, BellIcon } from "./components/icons";
+import { LogoMark, BellIcon, LockIcon } from "./components/icons";
 import Button from "./components/ui/Button";
 import BottomTabBar from "./components/BottomTabBar";
 // ...
@@ -92,6 +94,17 @@ function Nav() {
           {!initializing && (
             isAuthenticated ? (
               <>
+                <NavLink to="/account/security" className={desktopOnlyLinkClass} style={linkStyle}>
+                  Security
+                </NavLink>
+                <NavLink
+                  to="/account/security"
+                  title="Account security"
+                  aria-label="Account security"
+                  className="md:hidden h-9 w-9 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
+                >
+                  <LockIcon className="w-[18px] h-[18px]" />
+                </NavLink>
                 <NotificationBell />
                 <NavLink to="/wishlist" className={desktopOnlyLinkClass} style={linkStyle}>
                   Wishlist
@@ -155,6 +168,8 @@ function Shell() {
           <Route path="/products/:id" element={<ProductPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/" element={<SearchPage />} />
           {/* Not linked from the nav: /admin authenticates with the shared
               x-admin-key secret, not a user login, so it isn't a destination
               for shoppers - it's reached by URL by whoever holds the key. */}
@@ -180,6 +195,14 @@ function Shell() {
             element={
               <ProtectedRoute>
                 <NotificationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account/security"
+            element={
+              <ProtectedRoute>
+                <AccountSecurityPage />
               </ProtectedRoute>
             }
           />

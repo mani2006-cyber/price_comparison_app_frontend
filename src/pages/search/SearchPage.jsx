@@ -265,7 +265,7 @@ function SearchPage() {
             hasResults &&
             products.map((product, i) => (
               <ProductCard
-                key={`${product.marketplace}-${product.externalId}`}
+                key={`${product.marketplace}-${product.externalId}-${i}`}
                 product={product}
                 style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}
               />

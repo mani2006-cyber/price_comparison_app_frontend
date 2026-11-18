@@ -15,17 +15,19 @@ export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback((limit) => {
     if (!isAuthenticated) return Promise.resolve();
-    return getNotifications(accessToken)
+    return getNotifications(accessToken, limit)
       .then(({ notifications, unreadCount }) => {
         setNotifications(notifications);
         setUnreadCount(unreadCount);
+        setLoadError(null);
         setLoaded(true);
       })
-      .catch(() => {
-        // Non-fatal: the bell just stays at its last known count until the next successful refresh.
+      .catch((err) => {
+        setLoadError(err.message || "Couldn't load notifications. Please try again.");
         setLoaded(true);
       });
   }, [isAuthenticated, accessToken]);
@@ -39,6 +41,7 @@ export function NotificationProvider({ children }) {
       setNotifications([]);
       setUnreadCount(0);
       setLoaded(false);
+      setLoadError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
@@ -103,6 +106,7 @@ export function NotificationProvider({ children }) {
     notifications,
     unreadCount,
     loaded,
+    loadError,
     refresh,
     markRead,
     markAllRead,

@@ -1,4 +1,4 @@
-import { API_BASE } from "../../lib/apiBase";
+import { authRequest } from "../auth/api";
 
 export class LoginError extends Error {
     constructor(message, status) {
@@ -7,33 +7,28 @@ export class LoginError extends Error {
     }
 }
 
-export async function login({ email, password }) {
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // required so Set-Cookie: refreshToken is stored by the browser
-        body: JSON.stringify({ email, password }),
-    });
-
-    let data = null;
+async function loginRequest(path, body) {
     try {
-        data = await res.json();
-    } catch {
-        // no JSON body
-    }
-
-    const dataError = data && data.error ? data.error : null;
-    const dataSuccess = data && data.success;
-
-    if (!res.ok || dataSuccess === false) {
-        if (res.status === 401) {
-            throw new LoginError(dataError || "Invalid email or password", 401);
+        return await authRequest(path, { body });
+    } catch (err) {
+        if (err.status === 401) {
+            throw new LoginError(err.message || "Invalid email or password", 401);
         }
-        if (res.status === 429) {
+        if (err.status === 429) {
             throw new LoginError("Too many login attempts. Please wait a bit and try again.", 429);
         }
-        throw new LoginError(dataError || `Login failed (HTTP ${res.status})`, res.status);
+        throw new LoginError(err.message || "Login failed. Please try again.", err.status);
     }
+}
 
-    return data; // { success, user, accessToken }
+export function login({ email, password, captchaToken }) {
+    return loginRequest("/login", {
+        email,
+        password,
+        ...(captchaToken ? { captchaToken } : {}),
+    });
+}
+
+export function completeMfaLogin({ challengeToken, otp }) {
+    return loginRequest("/login/mfa", { challengeToken, otp });
 }

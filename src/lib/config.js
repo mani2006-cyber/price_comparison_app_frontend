@@ -29,6 +29,8 @@ function resolveApiBase() {
 
 export const config = {
     apiBaseUrl: resolveApiBase(),
+    turnstileEnabled: (import.meta.env.VITE_TURNSTILE_ENABLED || "").trim().toLowerCase() === "true",
+    turnstileSiteKey: (import.meta.env.VITE_TURNSTILE_SITE_KEY || "").trim(),
 
     // The search run when /search is opened with no ?q= of its own.
     defaultSearchQuery: (import.meta.env.VITE_DEFAULT_SEARCH_QUERY || "laptop").trim(),

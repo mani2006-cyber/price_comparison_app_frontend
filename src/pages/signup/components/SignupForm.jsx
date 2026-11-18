@@ -3,13 +3,17 @@ import TextField from "./TextField";
 import PasswordField from "./PasswordField";
 import Button from "../../../components/ui/Button";
 import { AlertIcon, LogoMark } from "../../../components/icons";
+import TurnstileWidget from "../../../components/TurnstileWidget";
 import { signup, SignupError } from "../api";
 import { validateName, validateEmail, validatePassword } from "../utils/validation";
+import { config } from "../../../lib/config";
 
 function SignupForm({ onSuccess }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -28,12 +32,18 @@ function SignupForm({ onSuccess }) {
     e.preventDefault();
     setFormError(null);
     if (!validate()) return;
+    if (config.turnstileEnabled && !captchaToken) {
+      setFormError("Complete the Cloudflare verification before creating your account.");
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const data = await signup({ name: name.trim(), email: email.trim(), password });
+      const data = await signup({ name: name.trim(), email: email.trim(), password, captchaToken });
       onSuccess(data);
     } catch (err) {
+      setCaptchaToken("");
+      setCaptchaResetKey((current) => current + 1);
       if (err instanceof SignupError && err.status === 409) {
         // Backend says the email is taken — surface it right on the email field.
         setFieldErrors((prev) => ({ ...prev, email: err.message }));
@@ -80,6 +90,7 @@ function SignupForm({ onSuccess }) {
       />
 
       <PasswordField value={password} onChange={setPassword} error={fieldErrors.password} />
+      <TurnstileWidget action="signup" onToken={setCaptchaToken} resetKey={captchaResetKey} />
 
       <Button type="submit" disabled={submitting} className="w-full">
         {submitting ? "Creating account..." : "Sign up"}

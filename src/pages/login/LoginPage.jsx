@@ -21,7 +21,7 @@ function LoginPage() {
   return (
     <div className="min-h-screen aurora-bg grid place-items-center px-6 py-12">
       <div className="w-full max-w-sm animate-in">
-        <LoginForm onSuccess={handleSuccess} />
+        <LoginForm onSuccess={handleSuccess} initialMessage={location.state?.message} />
       </div>
     </div>
   );

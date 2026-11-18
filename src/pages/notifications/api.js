@@ -1,8 +1,11 @@
 import { parseResponse } from "../../lib/http";
 import { API_BASE } from "../../lib/apiBase";
 
-export async function getNotifications(accessToken) {
-    const res = await fetch(`${API_BASE}/api/notifications`, {
+export async function getNotifications(accessToken, limit) {
+    const query = Number.isInteger(Number(limit)) && Number(limit) > 0
+        ? `?limit=${encodeURIComponent(Number(limit))}`
+        : "";
+    const res = await fetch(`${API_BASE}/api/notifications${query}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
     });
     const data = await parseResponse(res);

@@ -1,4 +1,15 @@
-function TextField({ id, label, type = "text", value, onChange, error, placeholder }) {
+function TextField({
+  id,
+  label,
+  type = "text",
+  value,
+  onChange,
+  error,
+  placeholder,
+  inputMode,
+  maxLength,
+  autoComplete,
+}) {
   return (
     <div>
       <label htmlFor={id} className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">
@@ -10,6 +21,9 @@ function TextField({ id, label, type = "text", value, onChange, error, placehold
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        inputMode={inputMode}
+        maxLength={maxLength}
+        autoComplete={autoComplete}
         className={`w-full h-11 px-4 rounded-2xl border bg-violet-50/40 outline-none focus:ring-4 text-sm font-medium placeholder:text-slate-400 transition-all ${
           error
             ? "border-red-300 focus:border-red-400 focus:ring-red-500/10"
